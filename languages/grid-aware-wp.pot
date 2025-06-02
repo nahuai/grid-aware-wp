@@ -1,0 +1,52 @@
+# Copyright (C) 2024 Nahuai
+msgid ""
+msgstr ""
+"Project-Id-Version: Grid Aware WordPress 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/grid-aware-wp\n"
+"POT-Creation-Date: 2024-03-21 12:00:00+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: grid-aware-wp.php:32
+msgid "Grid Aware WP"
+msgstr ""
+
+#: grid-aware-wp.php:51
+msgid "Grid Settings"
+msgstr ""
+
+#: grid-aware-wp.php:58
+msgid "Images"
+msgstr ""
+
+#: grid-aware-wp.php:66
+msgid "Videos"
+msgstr ""
+
+#: grid-aware-wp.php:74
+msgid "Typography"
+msgstr ""
+
+#: grid-aware-wp.php:89
+msgid "Grid Aware WordPress helps you manage and optimize your content layout by providing tools for handling images, videos, and typography in a grid-based system."
+msgstr ""
+
+#: grid-aware-wp.php:106
+msgid "Select which features you want to enable:"
+msgstr ""
+
+#: grid-aware-wp.php:116
+msgid "Enable grid-aware image handling"
+msgstr ""
+
+#: grid-aware-wp.php:127
+msgid "Enable grid-aware video handling"
+msgstr ""
+
+#: grid-aware-wp.php:138
+msgid "Enable grid-aware typography handling"
+msgstr "" 

@@ -24,6 +24,9 @@ define( 'GRID_AWARE_WP_VERSION', '1.0.0' );
 define( 'GRID_AWARE_WP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GRID_AWARE_WP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
+// Include required files
+require_once GRID_AWARE_WP_PLUGIN_DIR . 'includes/class-electricity-maps-api.php';
+
 /**
  * Add admin notice for grid-aware functionality
  */
@@ -38,8 +41,13 @@ function grid_aware_wp_admin_notice() {
 	}
 
 	$class = 'notice notice-info is-dismissible';
-	$message = __( 'Grid Aware WordPress is active. Some pages will be displayed differently depending on the grid intensity of your visitors.', 'grid-aware-wp' );
-	printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
+	$message = sprintf(
+		/* translators: %1$s: opening link tag, %2$s: closing link tag */
+		__( 'Grid Aware WordPress is active. Some pages will be displayed differently depending on the grid intensity of your visitors. %1$sConfigure settings%2$s', 'grid-aware-wp' ),
+		'<a href="' . esc_url( admin_url( 'admin.php?page=grid-aware-wp' ) ) . '">',
+		'</a>'
+	);
+	printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), wp_kses_post( $message ) );
 }
 add_action( 'admin_notices', 'grid_aware_wp_admin_notice' );
 
@@ -52,7 +60,7 @@ function grid_aware_wp_dismiss_notice() {
 	}
 
 	if ( ! wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'grid_aware_wp_dismiss' ) ) {
-		wp_die( __( 'Security check failed', 'grid-aware-wp' ) );
+		wp_die( esc_html__( 'Security check failed', 'grid-aware-wp' ) );
 	}
 
 	$user_id = get_current_user_id();
@@ -67,15 +75,15 @@ add_action( 'admin_init', 'grid_aware_wp_dismiss_notice' );
  * Add admin menu item
  */
 function grid_aware_wp_add_admin_menu() {
-    add_menu_page(
-        __( 'Grid Aware WP', 'grid-aware-wp' ),
-        __( 'Grid Aware WP', 'grid-aware-wp' ),
-        'manage_options',
-        'grid-aware-wp',
-        'grid_aware_wp_settings_page',
-        'dashicons-lightbulb',
-        30
-    );
+	add_menu_page(
+		__( 'Grid Aware WP', 'grid-aware-wp' ),
+		__( 'Grid Aware WP', 'grid-aware-wp' ),
+		'manage_options',
+		'grid-aware-wp',
+		'grid_aware_wp_settings_page',
+		'dashicons-lightbulb',
+		30
+	);
 }
 add_action( 'admin_menu', 'grid_aware_wp_add_admin_menu' );
 
@@ -118,6 +126,50 @@ function grid_aware_wp_register_rest_routes() {
 			),
 		)
 	);
+
+	// New endpoint for getting current carbon intensity
+	register_rest_route(
+		'grid-aware-wp/v1',
+		'/intensity',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'grid_aware_wp_get_current_intensity',
+			'permission_callback' => '__return_true', // Public endpoint
+			'args' => array(
+				'zone' => array(
+					'required' => false,
+					'type'     => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+			),
+		)
+	);
+
+	// New endpoint for testing API connection
+	register_rest_route(
+		'grid-aware-wp/v1',
+		'/test-api',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'grid_aware_wp_test_api_connection',
+			'permission_callback' => function () {
+				return current_user_can( 'manage_options' );
+			},
+			'args' => array(
+				'api_key' => array(
+					'required' => true,
+					'type'     => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+				),
+				'zone' => array(
+					'required' => false,
+					'type'     => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'default'  => 'FR',
+				),
+			),
+		)
+	);
 }
 add_action( 'rest_api_init', 'grid_aware_wp_register_rest_routes' );
 
@@ -130,17 +182,17 @@ function grid_aware_wp_register_settings() {
 		'grid_aware_wp_settings',
 		'grid_aware_wp_options',
 		array(
-			'type' => 'object',
+			'type'              => 'object',
 			'sanitize_callback' => 'grid_aware_wp_options_sanitize',
-			'show_in_rest' => array(
+			'show_in_rest'      => array(
 				'schema' => array(
-					'type' => 'object',
+					'type'       => 'object',
 					'properties' => array(
-						'images' => array(
+						'images'     => array(
 							'type' => 'string',
 							'enum' => array( '0', '1' ),
 						),
-						'videos' => array(
+						'videos'     => array(
 							'type' => 'string',
 							'enum' => array( '0', '1' ),
 						),
@@ -148,13 +200,17 @@ function grid_aware_wp_register_settings() {
 							'type' => 'string',
 							'enum' => array( '0', '1' ),
 						),
+						'api_key'    => array(
+							'type' => 'string',
+						),
 					),
 				),
 			),
-			'default' => array(
-				'images' => '1',
-				'videos' => '1',
+			'default'           => array(
+				'images'     => '1',
+				'videos'     => '1',
 				'typography' => '1',
+				'api_key'    => '',
 			),
 		)
 	);
@@ -164,15 +220,15 @@ function grid_aware_wp_register_settings() {
 		'',
 		'grid_aware_wp_page_options',
 		array(
-			'show_in_rest' => array(
+			'show_in_rest'      => array(
 				'schema' => array(
-					'type' => 'object',
+					'type'       => 'object',
 					'properties' => array(
-						'images' => array(
+						'images'     => array(
 							'type' => 'string',
 							'enum' => array( '0', '1' ),
 						),
-						'videos' => array(
+						'videos'     => array(
 							'type' => 'string',
 							'enum' => array( '0', '1' ),
 						),
@@ -180,11 +236,14 @@ function grid_aware_wp_register_settings() {
 							'type' => 'string',
 							'enum' => array( '0', '1' ),
 						),
+						'api_key'    => array(
+							'type' => 'string',
+						),
 					),
 				),
 			),
-			'single' => true,
-			'type' => 'object',
+			'single'            => true,
+			'type'              => 'object',
 			'sanitize_callback' => 'grid_aware_wp_options_sanitize',
 		)
 	);
@@ -283,21 +342,49 @@ function grid_aware_wp_typography_callback() {
  * Activation hook
  */
 function grid_aware_wp_activate() {
-    // Set default options
-    $default_options = array(
-        'images' => '1',
-        'videos' => '1',
-        'typography' => '1'
-    );
-    add_option( 'grid_aware_wp_options', $default_options );
+	// Set default options
+	$default_options = array(
+		'images'     => '1',
+		'videos'     => '1',
+		'typography' => '1',
+	);
+	add_option( 'grid_aware_wp_options', $default_options );
+	
+	// Add activation redirect flag
+	add_option( 'grid_aware_wp_do_activation_redirect', true );
 }
 register_activation_hook( __FILE__, 'grid_aware_wp_activate' );
+
+/**
+ * Handle activation redirect to settings page
+ */
+function grid_aware_wp_activation_redirect() {
+	if ( get_option( 'grid_aware_wp_do_activation_redirect', false ) ) {
+		delete_option( 'grid_aware_wp_do_activation_redirect' );
+		if ( ! isset( $_GET['activate-multi'] ) ) {
+			wp_safe_redirect( admin_url( 'admin.php?page=grid-aware-wp' ) );
+			exit;
+		}
+	}
+}
+add_action( 'admin_init', 'grid_aware_wp_activation_redirect' );
+
+/**
+ * Add settings link to plugin list
+ */
+function grid_aware_wp_add_plugin_links( $links ) {
+	$settings_link = '<a href="' . admin_url( 'admin.php?page=grid-aware-wp' ) . '">' . __( 'Settings', 'grid-aware-wp' ) . '</a>';
+	array_push( $links, $settings_link );
+	return $links;
+}
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'grid_aware_wp_add_plugin_links' );
 
 /**
  * Deactivation hook
  */
 function grid_aware_wp_deactivate() {
-    // Cleanup if needed
+	// Cleanup if needed
+	delete_option( 'grid_aware_wp_do_activation_redirect' );
 }
 register_deactivation_hook( __FILE__, 'grid_aware_wp_deactivate' );
 
@@ -306,13 +393,20 @@ register_deactivation_hook( __FILE__, 'grid_aware_wp_deactivate' );
  */
 function grid_aware_wp_enqueue_editor_assets() {
 	$asset_file = include plugin_dir_path( __FILE__ ) . 'build/index.asset.php';
+
+	wp_enqueue_script(
+		'grid-aware-wp-editor',
+		plugins_url( 'build/index.js', __FILE__ ),
+		array_merge(
+			$asset_file['dependencies'],
+			array( 'wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data' )
+		),
+		$asset_file['version'],
+		true
+	);
 	
 	// Get plugin options
-	$options = get_option( 'grid_aware_wp_options', array(
-		'images'     => '1',
-		'videos'     => '1',
-		'typography' => '1',
-	) );
+	$options = get_option( 'grid_aware_wp_options', array() );
 
 	// Pass options to JavaScript
 	wp_add_inline_script(
@@ -323,47 +417,34 @@ function grid_aware_wp_enqueue_editor_assets() {
 		),
 		'before'
 	);
-
-	wp_enqueue_script(
-		'grid-aware-wp-editor',
-		plugins_url( 'build/index.js', __FILE__ ),
-		array_merge(
-			$asset_file['dependencies'],
-			array('wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data')
-		),
-		$asset_file['version'],
-		true
-	);
 }
 add_action( 'enqueue_block_editor_assets', 'grid_aware_wp_enqueue_editor_assets' );
 
 /**
  * Ensure all options are saved, even if checkboxes are unchecked.
+ * @param mixed $new_value New value.
+ * @param mixed $old_value Old value.
+ * @return array Sanitized value.
  */
 function grid_aware_wp_options_sanitize( $new_value, $old_value = null ) {
-	$defaults = array(
-		'images'     => '0',
-		'videos'     => '0',
-		'typography' => '0',
+	$sanitized_value = array();
+	$defaults        = array(
+		'images'     => '1',
+		'videos'     => '1',
+		'typography' => '1',
+		'api_key'    => '',
 	);
-	
-	// If $new_value is empty (all unchecked), return all keys as '0'
-	if ( empty( $new_value ) || ! is_array( $new_value ) ) {
-		return $defaults;
+
+	if ( null === $old_value ) {
+		$old_value = get_option( 'grid_aware_wp_options', $defaults );
 	}
-	
-	// Merge defaults with new values, so unchecked boxes are saved as '0'
-	$new_value = wp_parse_args( $new_value, $defaults );
-	
-	// Ensure only '0' or '1' are saved
-	foreach ( $defaults as $key => $default ) {
-		$new_value[ $key ] = ( isset( $new_value[ $key ] ) && '1' === $new_value[ $key ] ) ? '1' : '0';
-	}
-	
-	// Debug log
-	error_log( 'Grid Aware WP - Sanitized options: ' . print_r( $new_value, true ) );
-	
-	return $new_value;
+
+	$sanitized_value['images']     = isset( $new_value['images'] ) && in_array( $new_value['images'], array( '0', '1' ), true ) ? $new_value['images'] : ( $old_value['images'] ?? $defaults['images'] );
+	$sanitized_value['videos']     = isset( $new_value['videos'] ) && in_array( $new_value['videos'], array( '0', '1' ), true ) ? $new_value['videos'] : ( $old_value['videos'] ?? $defaults['videos'] );
+	$sanitized_value['typography'] = isset( $new_value['typography'] ) && in_array( $new_value['typography'], array( '0', '1' ), true ) ? $new_value['typography'] : ( $old_value['typography'] ?? $defaults['typography'] );
+	$sanitized_value['api_key']    = isset( $new_value['api_key'] ) ? sanitize_text_field( $new_value['api_key'] ) : ( $old_value['api_key'] ?? $defaults['api_key'] );
+
+	return $sanitized_value;
 }
 
 /**
@@ -381,11 +462,14 @@ function grid_aware_wp_get_settings( $request ) {
 	}
 	
 	// Fallback to global settings
-	$options = get_option( 'grid_aware_wp_options', array(
-		'images'     => '1',
-		'videos'     => '1',
-		'typography' => '1',
-	) );
+	$options = get_option(
+		'grid_aware_wp_options',
+		array(
+			'images'     => '1',
+			'videos'     => '1',
+			'typography' => '1',
+		)
+	);
 	return rest_ensure_response( $options );
 }
 
@@ -409,6 +493,63 @@ function grid_aware_wp_update_settings( $request ) {
 	}
 	
 	return rest_ensure_response( $options );
+}
+
+/**
+ * Get current carbon intensity via REST API
+ */
+function grid_aware_wp_get_current_intensity( $request ) {
+	$zone = $request->get_param( 'zone' );
+	
+	// If zone is provided, use it; otherwise get from IP
+	if ( ! empty( $zone ) ) {
+		$intensity_data = Grid_Aware_WP_Electricity_Maps_API::get_carbon_intensity( $zone );
+	} else {
+		$intensity_data = Grid_Aware_WP_Electricity_Maps_API::get_current_intensity_level();
+	}
+	
+	if ( is_wp_error( $intensity_data ) ) {
+		return new WP_Error(
+			'intensity_error',
+			$intensity_data->get_error_message(),
+			array( 'status' => 400 )
+		);
+	}
+	
+	return rest_ensure_response( $intensity_data );
+}
+
+/**
+ * Test API connection via REST API
+ */
+function grid_aware_wp_test_api_connection( $request ) {
+	$api_key = $request->get_param( 'api_key' );
+	$zone = $request->get_param( 'zone' );
+	
+	if ( empty( $api_key ) ) {
+		return new WP_Error(
+			'missing_api_key',
+			__( 'API key is required.', 'grid-aware-wp' ),
+			array( 'status' => 400 )
+		);
+	}
+	
+	// Test the API connection
+	$test_result = Grid_Aware_WP_Electricity_Maps_API::get_carbon_intensity( $zone, $api_key );
+	
+	if ( is_wp_error( $test_result ) ) {
+		return new WP_Error(
+			'api_test_failed',
+			$test_result->get_error_message(),
+			array( 'status' => 400 )
+		);
+	}
+	
+	return rest_ensure_response( array(
+		'success' => true,
+		'message' => __( 'API connection successful.', 'grid-aware-wp' ),
+		'data'    => $test_result,
+	) );
 }
 
 /**
@@ -479,6 +620,9 @@ function grid_aware_wp_enqueue_frontend_assets() {
 	// Use page-specific settings if available, otherwise use global settings
 	$settings = ! empty( $page_options ) ? $page_options : $global_options;
 
+	// Enqueue wp-api-settings for REST API access
+	wp_enqueue_script( 'wp-api' );
+
 	// Enqueue frontend styles
 	wp_enqueue_style(
 		'grid-aware-wp-frontend',
@@ -491,7 +635,7 @@ function grid_aware_wp_enqueue_frontend_assets() {
 	wp_enqueue_script(
 		'grid-aware-wp-frontend',
 		GRID_AWARE_WP_PLUGIN_URL . 'assets/js/frontend.js',
-		array(),
+		array( 'wp-api' ),
 		GRID_AWARE_WP_VERSION,
 		true
 	);
@@ -725,17 +869,13 @@ function grid_aware_wp_enqueue_admin_assets( $hook ) {
 		return;
 	}
 
+	$asset_file = include plugin_dir_path( __FILE__ ) . 'build/index.asset.php';
+
 	wp_enqueue_script(
 		'grid-aware-wp-admin',
 		GRID_AWARE_WP_PLUGIN_URL . 'build/index.js',
-		array(
-			'wp-components',
-			'wp-element',
-			'wp-api-fetch',
-			'wp-i18n',
-			'wp-polyfill'
-		),
-		GRID_AWARE_WP_VERSION,
+		array_merge( $asset_file['dependencies'], array( 'wp-api-fetch', 'wp-i18n' ) ),
+		$asset_file['version'],
 		true
 	);
 
@@ -753,7 +893,6 @@ function grid_aware_wp_enqueue_admin_assets( $hook ) {
 	wp_enqueue_style( 'wp-components' );
 }
 add_action( 'admin_enqueue_scripts', 'grid_aware_wp_enqueue_admin_assets' );
-
 
 /* attemps to use a pattern to make the grid aware switcher work in the editor, the limitation is that the user can not edit the pattern in the editor 
 /**

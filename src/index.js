@@ -7,6 +7,7 @@ import {
 	PanelRow,
 	ToggleControl,
 	CheckboxControl,
+	TextControl,
 	Button,
 	Notice,
 	Spinner
@@ -53,8 +54,10 @@ const GridAwareWPSettings = () => {
 		images: '1',
 		videos: '1',
 		typography: '1',
+		api_key: '',
 	});
 	const [isSaving, setIsSaving] = useState(false);
+	const [isTestingApi, setIsTestingApi] = useState(false);
 	const [notice, setNotice] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
 
@@ -82,7 +85,8 @@ const GridAwareWPSettings = () => {
 	}, []);
 
 	const updateOption = async (key, value) => {
-		const newOptions = { ...options, [key]: value ? '1' : '0' };
+		const newValue = key === 'api_key' ? value : (value ? '1' : '0');
+		const newOptions = { ...options, [key]: newValue };
 		setOptions(newOptions);
 	};
 
@@ -115,6 +119,49 @@ const GridAwareWPSettings = () => {
 		}
 	};
 
+	const testApiConnection = async () => {
+		if (!options.api_key) {
+			setNotice({
+				type: 'error',
+				message: __('Please enter an API key first.', 'grid-aware-wp')
+			});
+			return;
+		}
+
+		setIsTestingApi(true);
+		setNotice(null);
+
+		try {
+			const response = await apiFetch({
+				path: `/grid-aware-wp/v1/test-api`,
+				method: 'POST',
+				data: {
+					api_key: options.api_key,
+					zone: 'ES', // Test with Spain as default
+				},
+			});
+
+			if (response && response.success) {
+				setNotice({
+					type: 'success',
+					message: __('API connection successful! Carbon intensity data is available.', 'grid-aware-wp')
+				});
+			} else {
+				setNotice({
+					type: 'error',
+					message: __('API connection failed. Please check your API key.', 'grid-aware-wp')
+				});
+			}
+		} catch (error) {
+			setNotice({
+				type: 'error',
+				message: __('API connection failed: ' + (error.message || 'Unknown error'), 'grid-aware-wp')
+			});
+		} finally {
+			setIsTestingApi(false);
+		}
+	};
+
 	if (isLoading) {
 		return (
 			<div className="grid-aware-wp-loading">
@@ -134,6 +181,34 @@ const GridAwareWPSettings = () => {
 				</Notice>
 			)}
 
+			{/* API Key Section */}
+			<h2>{__('Electricity Maps API Key', 'grid-aware-wp')}</h2>
+			<p>{__('An API key is required to fetch real-time grid intensity data from Electricity Maps. This allows the plugin to optimize your site based on current energy conditions. You can get your API key from the ', 'grid-aware-wp')}
+				<a href="https://portal.electricitymaps.com/dashboard" target="_blank" rel="noopener noreferrer">
+					{__('Electricity Maps dashboard', 'grid-aware-wp')}
+				</a>.
+			</p>
+			<div style={{ display: 'flex', gap: '1em', marginBottom: '1.5em' }}>
+				<TextControl
+					value={options.api_key}
+					onChange={(val) => updateOption('api_key', val)}
+					style={{ flex: 1, height: '36px' }}
+					label={null}
+					placeholder={__('Enter your API key', 'grid-aware-wp')}
+					__next40pxDefaultSize={true}
+					__nextHasNoMarginBottom={true}
+				/>
+				<Button
+					variant="secondary"
+					onClick={testApiConnection}
+					isBusy={isTestingApi}
+					disabled={isTestingApi || !options.api_key}
+				>
+					{isTestingApi ? __('Testing...', 'grid-aware-wp') : __('Test API Connection', 'grid-aware-wp')}
+				</Button>
+			</div>
+
+			{/* Settings Section */}
 			<h2>{__('Grid Aware WP Settings', 'grid-aware-wp')}</h2>
 			<fieldset>
 				<PanelRow>
@@ -142,6 +217,7 @@ const GridAwareWPSettings = () => {
 						help={__('Optimizes images based on grid intensity, adjusting quality and loading strategies to reduce energy consumption.', 'grid-aware-wp')}
 						checked={options.images === '1'}
 						onChange={(val) => updateOption('images', val)}
+						__nextHasNoMarginBottom={true}
 					/>
 				</PanelRow>
 				<PanelRow>
@@ -150,6 +226,7 @@ const GridAwareWPSettings = () => {
 						help={__('Manages video playback and quality based on grid conditions, potentially reducing resolution or deferring autoplay during high-intensity periods.', 'grid-aware-wp')}
 						checked={options.videos === '1'}
 						onChange={(val) => updateOption('videos', val)}
+						__nextHasNoMarginBottom={true}
 					/>
 				</PanelRow>
 				<PanelRow>
@@ -158,6 +235,7 @@ const GridAwareWPSettings = () => {
 						help={__('Adjusts font loading and rendering based on grid intensity, optimizing for energy efficiency while maintaining readability.', 'grid-aware-wp')}
 						checked={options.typography === '1'}
 						onChange={(val) => updateOption('typography', val)}
+						__nextHasNoMarginBottom={true}
 					/>
 				</PanelRow>
 			</fieldset>
@@ -166,6 +244,7 @@ const GridAwareWPSettings = () => {
 				onClick={saveOptions}
 				isBusy={isSaving}
 				disabled={isSaving}
+				style={{ marginTop: '1em' }}
 			>
 				{isSaving ? __('Saving...', 'grid-aware-wp') : __('Save Settings', 'grid-aware-wp')}
 			</Button>
@@ -178,6 +257,7 @@ const GridAwareWPPanel = () => {
 		images: '1',
 		videos: '1',
 		typography: '1',
+		api_key: '',
 	});
 	const [isPageSpecific, setIsPageSpecific] = useState(false);
 
@@ -200,6 +280,7 @@ const GridAwareWPPanel = () => {
 					images: pluginOptions.images !== undefined ? pluginOptions.images : '1',
 					videos: pluginOptions.videos !== undefined ? pluginOptions.videos : '1',
 					typography: pluginOptions.typography !== undefined ? pluginOptions.typography : '1',
+					api_key: pluginOptions.api_key !== undefined ? pluginOptions.api_key : '',
 				});
 			}
 		};
@@ -208,7 +289,8 @@ const GridAwareWPPanel = () => {
 	}, []);
 
 	const updateOption = async (key, value) => {
-		const newOptions = { ...options, [key]: value ? '1' : '0' };
+		const newValue = key === 'api_key' ? value : (value ? '1' : '0');
+		const newOptions = { ...options, [key]: newValue };
 		
 		try {
 			const postId = select('core/editor').getCurrentPostId();
@@ -245,6 +327,7 @@ const GridAwareWPPanel = () => {
 					label={__('Enable grid-aware image handling', 'grid-aware-wp')}
 					checked={options.images === '1'}
 					onChange={(val) => updateOption('images', val)}
+					__nextHasNoMarginBottom={true}
 				/>
 			</PanelRow>
 			<p className="description">
@@ -255,6 +338,7 @@ const GridAwareWPPanel = () => {
 					label={__('Enable grid-aware video handling', 'grid-aware-wp')}
 					checked={options.videos === '1'}
 					onChange={(val) => updateOption('videos', val)}
+					__nextHasNoMarginBottom={true}
 				/>
 			</PanelRow>
 			<p className="description">
@@ -265,10 +349,21 @@ const GridAwareWPPanel = () => {
 					label={__('Enable grid-aware typography handling', 'grid-aware-wp')}
 					checked={options.typography === '1'}
 					onChange={(val) => updateOption('typography', val)}
+					__nextHasNoMarginBottom={true}
 				/>
 			</PanelRow>
 			<p className="description">
 				{__('Adjusts font loading and rendering based on grid intensity, optimizing for energy efficiency while maintaining readability.', 'grid-aware-wp')}
+			</p>
+			<PanelRow>
+				<TextControl
+					label={__('Electricity Maps API Key', 'grid-aware-wp')}
+					value={options.api_key}
+					onChange={(val) => updateOption('api_key', val)}
+				/>
+			</PanelRow>
+			<p className="description">
+				{__('Enter your Electricity Maps API key. This will override the global setting.', 'grid-aware-wp')}
 			</p>
 			<div style={{ marginTop: '1.5em' }}>
 				<strong>{__('Preview with grid intensity:', 'grid-aware-wp')}</strong>

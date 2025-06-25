@@ -199,8 +199,81 @@
 
 /* View Transition Fallback */
 @supports not (view-transition-name: none) {
-	.secondary-nav,
+	.carbon-switcher-wrapper,
 	.grid-aware-image-placeholder {
-		transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: all 0.3s ease;
+	}
+}
+
+/* Grid Intensity Info Display */
+.grid-intensity-info {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	background: rgba(0, 0, 0, 0.9);
+	color: white;
+	padding: 12px 16px;
+	border-radius: 8px;
+	font-size: 12px;
+	z-index: 1000;
+	max-width: 220px;
+	backdrop-filter: blur(10px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	transition: opacity 0.5s ease;
+}
+
+.grid-intensity-info div {
+	margin-bottom: 4px;
+	line-height: 1.4;
+}
+
+.grid-intensity-info div:last-child {
+	margin-bottom: 0;
+}
+
+.grid-intensity-info strong {
+	color: #4ade80;
+	font-weight: 600;
+}
+
+.grid-intensity-info small {
+	opacity: 0.7;
+	font-size: 11px;
+}
+
+/* Intensity Level Colors */
+.grid-intensity-info[data-intensity="low"] strong {
+	color: #22c55e;
+}
+
+.grid-intensity-info[data-intensity="medium"] strong {
+	color: #f59e0b;
+}
+
+.grid-intensity-info[data-intensity="high"] strong {
+	color: #ef4444;
+}
+
+/* Body Classes for Intensity Levels */
+body.grid-intensity-low {
+	--grid-intensity-color: #22c55e;
+}
+
+body.grid-intensity-medium {
+	--grid-intensity-color: #f59e0b;
+}
+
+body.grid-intensity-high {
+	--grid-intensity-color: #ef4444;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.grid-intensity-info {
+		bottom: 10px;
+		right: 10px;
+		max-width: 180px;
+		font-size: 11px;
+		padding: 10px 12px;
 	}
 }

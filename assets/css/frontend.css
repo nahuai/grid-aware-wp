@@ -97,12 +97,30 @@
 	color: #6c757d;
 	transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 	transform-origin: center;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100px;
+	box-sizing: border-box;
+	width: var(--image-width, 100%);
+	aspect-ratio: var(--aspect-ratio, auto);
+	max-width: 100%;
+}
+
+.grid-aware-image-placeholder:hover {
+	background: #e9ecef;
+	border-color: #adb5bd;
+	transform: scale(1.02);
 }
 
 .placeholder-content {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
 }
 
 .placeholder-alt {
@@ -118,6 +136,250 @@
     margin-top: 0.5rem;
     font-size: 13px;
     color: #6c757d;
+}
+
+.placeholder-click-hint {
+    margin-top: 0.5rem;
+    font-size: 12px;
+    color: #007bff;
+    font-weight: 500;
+    text-decoration: underline;
+}
+
+/* Loaded image state */
+.grid-aware-image-loaded {
+	cursor: default;
+}
+
+.grid-aware-image-loaded:hover {
+	background: #f8f9fa;
+	border-color: #dee2e6;
+	transform: none;
+}
+
+/* Blurred Image Container */
+.grid-aware-image-blurred {
+	position: relative;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+.grid-aware-image-blurred:hover {
+	transform: scale(1.02);
+}
+
+.grid-aware-image-blurred .blur-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.3);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+	border-radius: 4px;
+}
+
+.grid-aware-image-blurred:hover .blur-overlay {
+	opacity: 1;
+}
+
+.grid-aware-image-blurred .blur-message {
+	color: white;
+	background: rgba(0, 0, 0, 0.8);
+	padding: 0.5rem 1rem;
+	border-radius: 20px;
+	font-size: 14px;
+	font-weight: 500;
+	text-align: center;
+	backdrop-filter: blur(4px);
+}
+
+/* Loaded blurred image state */
+.grid-aware-image-blurred.grid-aware-image-loaded {
+	cursor: default;
+}
+
+.grid-aware-image-blurred.grid-aware-image-loaded:hover {
+	transform: none;
+}
+
+.grid-aware-image-blurred.grid-aware-image-loaded .blur-overlay {
+	display: none;
+}
+
+/* Video Placeholder */
+.grid-aware-video-placeholder {
+	view-transition-name: video;
+	background: #f8f9fa;
+	border: 1px solid #dee2e6;
+	border-radius: 4px;
+	padding: 1rem;
+	text-align: center;
+	font-size: 14px;
+	color: #6c757d;
+	transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+	transform-origin: center;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100px;
+	box-sizing: border-box;
+	width: var(--video-width, 100%);
+	aspect-ratio: 16/9;
+}
+
+.grid-aware-video-placeholder:hover {
+	background: #e9ecef;
+	border-color: #adb5bd;
+	transform: scale(1.02);
+}
+
+.grid-aware-video-placeholder .placeholder-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.grid-aware-video-placeholder .placeholder-title {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.grid-aware-video-placeholder .placeholder-message {
+    margin-top: 0.5rem;
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.grid-aware-video-placeholder .placeholder-click-hint {
+    margin-top: 0.5rem;
+    font-size: 12px;
+    color: #007bff;
+    font-weight: 500;
+    text-decoration: underline;
+}
+
+/* Add video icon to placeholder */
+.grid-aware-video-placeholder::before {
+    content: "▶";
+    font-size: 2rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Loaded video state */
+.grid-aware-video-loaded {
+    cursor: default;
+}
+
+.grid-aware-video-loaded:hover {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+    transform: none;
+}
+
+/* YouTube Thumbnail */
+.grid-aware-video-thumbnail {
+	view-transition-name: video;
+	position: relative;
+	background: #f8f9fa;
+	border: 1px solid #dee2e6;
+	border-radius: 4px;
+	overflow: hidden;
+	transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+	transform-origin: center;
+	cursor: pointer;
+	display: block;
+	width: var(--video-width, 100%);
+	aspect-ratio: 16/9;
+	box-sizing: border-box;
+}
+
+.grid-aware-video-thumbnail:hover {
+	border-color: #adb5bd;
+	transform: scale(1.02);
+}
+
+.grid-aware-video-thumbnail img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.grid-aware-video-thumbnail .thumbnail-overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.6);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+.grid-aware-video-thumbnail:hover .thumbnail-overlay {
+	opacity: 1;
+}
+
+.grid-aware-video-thumbnail .play-button {
+	width: 60px;
+	height: 60px;
+	background: rgba(255, 0, 0, 0.9);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	font-size: 24px;
+	margin-bottom: 1rem;
+	transition: background-color 0.3s ease;
+}
+
+.grid-aware-video-thumbnail:hover .play-button {
+	background: rgba(255, 0, 0, 1);
+}
+
+.grid-aware-video-thumbnail .thumbnail-title {
+	color: white;
+	font-weight: 500;
+	font-size: 16px;
+	text-align: center;
+	margin: 0 0 0.5rem 0;
+	padding: 0 1rem;
+	line-height: 1.3;
+}
+
+.grid-aware-video-thumbnail .thumbnail-message {
+	color: rgba(255, 255, 255, 0.9);
+	font-size: 14px;
+	text-align: center;
+	margin: 0;
+	padding: 0 1rem;
+}
+
+/* Loaded thumbnail state */
+.grid-aware-video-thumbnail.grid-aware-video-loaded {
+	cursor: default;
+}
+
+.grid-aware-video-thumbnail.grid-aware-video-loaded:hover {
+	border-color: #dee2e6;
+	transform: none;
 }
 
 /* Intensity States */
@@ -194,6 +456,14 @@
 }
 
 ::view-transition-new(image) {
+	animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both slide-from-right;
+}
+
+::view-transition-old(video) {
+	animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
+}
+
+::view-transition-new(video) {
 	animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both slide-from-right;
 }
 
@@ -276,4 +546,15 @@ body.grid-intensity-high {
 		font-size: 11px;
 		padding: 10px 12px;
 	}
+}
+
+
+.grid-aware-video-loaded,
+.grid-aware-video-placeholder {
+    width: 100% !important;
+	aspect-ratio: 16/9 !important;
+}
+
+.grid-intensity-medium .wp-block-image img {
+    filter: blur(1px);
 }

@@ -651,6 +651,56 @@ function grid_aware_wp_enqueue_frontend_assets() {
 		),
 		'before'
 	);
+
+	// Only load click-to-load JavaScript if videos are enabled and grid intensity is high or medium
+	if ( isset( $settings['videos'] ) && '1' === $settings['videos'] && ( 'high' === $initial_intensity || 'medium' === $initial_intensity ) ) {
+		// Check if the current post has YouTube embeds
+		$post_content = get_post_field( 'post_content', $post_id );
+		if ( $post_content && ( strpos( $post_content, 'youtube.com' ) !== false || strpos( $post_content, 'youtu.be' ) !== false ) ) {
+			wp_add_inline_script(
+				'grid-aware-wp-frontend',
+				'
+				window.gridAwareWPLoadVideo = function(element) {
+					var originalVideo = element.getAttribute("data-original-video");
+					if (originalVideo) {
+						element.innerHTML = originalVideo;
+						element.classList.remove("grid-aware-video-placeholder", "grid-aware-video-thumbnail");
+						element.classList.add("grid-aware-video-loaded");
+					}
+				};
+				',
+				'before'
+			);
+		}
+	}
+
+	// Only load click-to-load JavaScript if images are enabled and grid intensity is high or medium
+	if ( isset( $settings['images'] ) && '1' === $settings['images'] && ( 'high' === $initial_intensity || 'medium' === $initial_intensity ) ) {
+		// Check if the current post has image blocks
+		$post_content = get_post_field( 'post_content', $post_id );
+		if ( $post_content && strpos( $post_content, '<!-- wp:image' ) !== false ) {
+			wp_add_inline_script(
+				'grid-aware-wp-frontend',
+				'
+				window.gridAwareWPLoadImage = function(element) {
+					var originalImage = element.getAttribute("data-original-image");
+					if (originalImage) {
+						element.innerHTML = originalImage;
+						element.classList.remove("grid-aware-image-placeholder", "grid-aware-image-blurred");
+						element.classList.add("grid-aware-image-loaded");
+						
+						// Remove blur filter from the loaded image
+						var img = element.querySelector("img");
+						if (img) {
+							img.style.filter = "none";
+						}
+					}
+				};
+				',
+				'before'
+			);
+		}
+	}
 }
 add_action( 'wp_enqueue_scripts', 'grid_aware_wp_enqueue_frontend_assets' );
 
@@ -709,50 +759,104 @@ function grid_aware_wp_filter_image_block( $block_content, $block ) {
 		error_log( 'Grid Aware WP - Block content before processing: ' . $block_content );
 	}
 	
+	// Extract the image ID if available
+	$image_id = null;
+	if ( preg_match( '/wp-image-(\d+)/', $block_content, $image_id_matches ) ) {
+		$image_id = $image_id_matches[1];
+	}
+
+	$original_width = '';
+	$original_height = '';
+	$original_style = '';
+	$aspect_ratio = '';
+
+	// If we have an image ID, get the real file dimensions
+	if ( $image_id ) {
+		$image_path = get_attached_file( $image_id );
+		$size = @getimagesize( $image_path );
+		if ( $size ) {
+			$original_width = $size[0];
+			$original_height = $size[1];
+			// Use CSS aspect-ratio format: width / height (e.g., 16/9)
+			$aspect_ratio = $original_width . ' / ' . $original_height;
+		}
+	}
+
+	// Prefer the displayed width from the HTML, fallback to 100%
+	$displayed_width = '';
+	if ( preg_match( '/width="(\d+)"/', $block_content, $width_matches ) ) {
+		$displayed_width = $width_matches[1] . 'px';
+	} else {
+		$displayed_width = '100%';
+	}
+
+	// ... fallback to HTML height if needed ...
+	if ( ! $original_height && preg_match( '/height="(\d+)"/', $block_content, $height_matches ) ) {
+		$original_height = $height_matches[1];
+	}
+	if ( ! $aspect_ratio && $original_width && $original_height ) {
+		$aspect_ratio = $original_width . ' / ' . $original_height;
+	}
+
+	// Build style attribute for placeholder using CSS custom properties
+	$placeholder_style = '';
+	if ( $displayed_width ) {
+		$placeholder_style .= '--image-width: ' . $displayed_width . '; ';
+	}
+	if ( $aspect_ratio ) {
+		$placeholder_style .= '--aspect-ratio: ' . $aspect_ratio . '; ';
+	}
+	if ( $original_style ) {
+		$placeholder_style .= $original_style . '; ';
+	}
+
 	// If grid intensity is high, don't display the image
 	if ( 'high' === $grid_intensity ) {
 		// Extract alt text and caption if available
 		$alt_text = '';
 		$caption = '';
-		
+
 		// Try to get alt text from the image tag
 		if ( preg_match( '/<img[^>]+alt="([^"]*)"[^>]*>/i', $block_content, $alt_matches ) ) {
 			$alt_text = $alt_matches[1];
 		}
-		
+
 		// Try to get caption from figcaption
 		if ( preg_match( '/<figcaption[^>]*>(.*?)<\/figcaption>/i', $block_content, $caption_matches ) ) {
 			$caption = $caption_matches[1];
 		}
-		
-		// If there's no alt text, show the placeholder message
-		if ( empty( $alt_text ) ) {
-			$placeholder = sprintf(
-				'<div class="grid-aware-image-placeholder">
-					<div class="placeholder-content">
-						<p class="placeholder-message">%s</p>
-					</div>
-				</div>',
-				esc_html__( 'This image has not been loaded because the grid intensity is high.', 'grid-aware-wp' )
-			);
-			return $placeholder;
-		}
-		
-		// If there is alt text, show it with optional caption
-		return sprintf(
-			'<div class="grid-aware-image-placeholder">
+
+		// Build the placeholder HTML
+		$placeholder_html = sprintf(
+			'<div class="grid-aware-image-placeholder" data-original-image="%s" onclick="gridAwareWPLoadImage(this)"%s>
 				<div class="placeholder-content">
-					<p class="placeholder-alt">%s</p>
+					%s
 					%s
 				</div>
 			</div>',
-			esc_html( $alt_text ),
-			! empty( $caption ) ? '<p class="placeholder-caption">' . esc_html( $caption ) . '</p>' : ''
+			esc_attr( $block_content ),
+			! empty( $placeholder_style ) ? ' style="' . esc_attr( $placeholder_style ) . '"' : '',
+			empty( $alt_text )
+				? '<p class="placeholder-message">' . esc_html__( 'This image has not been loaded because the grid intensity is high.', 'grid-aware-wp' ) . '</p>'
+				: '<p class="placeholder-alt">' . esc_html( $alt_text ) . '</p>' . ( ! empty( $caption ) ? '<p class="placeholder-caption">' . esc_html( $caption ) . '</p>' : '' ),
+			'<p class="placeholder-click-hint">' . esc_html__( 'Click to load image', 'grid-aware-wp' ) . '</p>'
 		);
+
+		// Replace only the <img ...> tag with the placeholder
+		$block_content = preg_replace(
+			'/<img[^>]*>/i',
+			$placeholder_html,
+			$block_content
+		);
+
+		return $block_content;
 	}
 
-	// For medium intensity, use smaller image size
+	// For medium intensity, use smaller image size and 100% width if no width is set
 	if ( 'medium' === $grid_intensity ) {
+		// Store the original image HTML before modifying it
+		$original_image_html = $block_content;
+		
 		// Extract the image ID if available
 		preg_match( '/wp-image-(\d+)/', $block_content, $image_id_matches );
 		
@@ -761,29 +865,39 @@ function grid_aware_wp_filter_image_block( $block_content, $block ) {
 			$medium_image = wp_get_attachment_image_src( $image_id, 'medium' );
 			
 			if ( $medium_image ) {
-				// Extract original dimensions and srcset
+				// Check if width is explicitly set in the image
 				preg_match( '/width="(\d+)"/', $block_content, $width_matches );
-				preg_match( '/height="(\d+)"/', $block_content, $height_matches );
-				preg_match( '/srcset="([^"]+)"/', $block_content, $srcset_matches );
-				preg_match( '/sizes="([^"]+)"/', $block_content, $sizes_matches );
 				
-				// Replace the image source with the medium size but keep original dimensions and srcset
+				// If no width is set, use 100% width
+				$image_width = ! empty( $width_matches[1] ) ? $width_matches[1] : '100%';
+				
+				// Replace the image source with medium size and appropriate width
 				$block_content = preg_replace(
 					'/<img[^>]+src="[^"]*"[^>]*>/i',
 					sprintf(
-						'<img src="%s" width="%s" height="%s" alt="%s" class="wp-image-%d" loading="lazy"%s%s />',
+						'<img src="%s" width="%s" alt="%s" class="wp-image-%d" loading="lazy" />',
 						esc_url( $medium_image[0] ),
-						esc_attr( $width_matches[1] ?? 'auto' ),
-						esc_attr( $height_matches[1] ?? 'auto' ),
+						esc_attr( $image_width ),
 						esc_attr( get_post_meta( $image_id, '_wp_attachment_image_alt', true ) ),
-						$image_id,
-						isset( $srcset_matches[1] ) ? ' srcset="' . esc_attr( $srcset_matches[1] ) . '"' : '',
-						isset( $sizes_matches[1] ) ? ' sizes="' . esc_attr( $sizes_matches[1] ) . '"' : ''
+						$image_id
 					),
 					$block_content
 				);
 			}
 		}
+		
+		// Add click-to-load wrapper for medium intensity images
+		$block_content = sprintf(
+			'<div class="grid-aware-image-blurred" data-original-image="%s" onclick="gridAwareWPLoadImage(this)">
+				%s
+				<div class="blur-overlay">
+					<div class="blur-message">%s</div>
+				</div>
+			</div>',
+			esc_attr( $original_image_html ),
+			$block_content,
+			esc_html__( 'Click to load full quality', 'grid-aware-wp' )
+		);
 	}
 
 	// For low intensity, keep original image but add lazy loading
@@ -894,76 +1008,252 @@ function grid_aware_wp_enqueue_admin_assets( $hook ) {
 }
 add_action( 'admin_enqueue_scripts', 'grid_aware_wp_enqueue_admin_assets' );
 
-/* attemps to use a pattern to make the grid aware switcher work in the editor, the limitation is that the user can not edit the pattern in the editor 
 /**
- * Register block patterns
- 
-function grid_aware_wp_register_patterns() {
-	register_block_pattern(
-		'grid-aware-wp/intensity-switcher',
-		array(
-			'title'       => __( 'Grid Intensity Switcher', 'grid-aware-wp' ),
-			'description' => __( 'A switcher to control the grid intensity view.', 'grid-aware-wp' ),
-			'categories'  => array( 'grid-aware-wp' ),
-			'content'     => '<!-- wp:group {"metadata":{"name":"Grid intensity view switcher"},"align":"full","className":"carbon-switcher","style":{"color":{"background":"#f6f6f6"},"spacing":{"padding":{"right":"var:preset|spacing|40","left":"var:preset|spacing|40","top":"var:preset|spacing|40","bottom":"var:preset|spacing|40"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"right"}} -->
-<div class="wp-block-group alignfull carbon-switcher has-background" style="background-color:#f6f6f6;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40)"><!-- wp:paragraph -->
-<p>Grid intensity view</p>
-<!-- /wp:paragraph -->
+ * Filter YouTube embed blocks based on grid intensity
+ */
+function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
+	// Get current page/post ID
+	$post_id = get_the_ID();
 
-<!-- wp:html -->
-<select id="carbon-switcher-toggle" class="grid-intensity-select" aria-label="Select grid intensity">
-	<option value="live">Live</option>
-	<option value="low">Low</option>
-	<option value="medium">Medium</option>
-	<option value="high">High</option>
-</select>
-<!-- /wp:html --></div>
-<!-- /wp:group -->',
-		)
-	);
-}
-add_action( 'init', 'grid_aware_wp_register_patterns' );
-
-/**
- * Register block pattern category
- 
-function grid_aware_wp_register_pattern_category() {
-	register_block_pattern_category(
-		'grid-aware-wp',
-		array(
-			'label' => __( 'Grid Aware WP', 'grid-aware-wp' ),
-		)
-	);
-}
-add_action( 'init', 'grid_aware_wp_register_pattern_category' );
-/**
- * Add grid intensity switcher to the page
- 
-function grid_aware_wp_add_intensity_switcher() {
-	// Only add on frontend
-	if ( is_admin() ) {
-		return;
+	// Debug: Log the original block content and block data
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		error_log( 'Grid Aware WP - YouTube embed original block content: ' . $block_content );
+		error_log( 'Grid Aware WP - YouTube embed block data: ' . print_r( $block, true ) );
 	}
 
-	// Get current intensity from URL
-	$current_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
-	
-	// Add inline script to set the selected option
-	wp_add_inline_script(
-		'grid-aware-wp-frontend',
-		sprintf(
-			'document.addEventListener("DOMContentLoaded", function() {
-				var select = document.getElementById("carbon-switcher-toggle");
-				if (select) {
-					select.value = %s;
-				}
-			});',
-			wp_json_encode( $current_intensity )
-		)
-	);
-	
-	// Render the pattern
-	echo do_blocks( '<!-- wp:pattern {"slug":"grid-aware-wp/intensity-switcher"} /-->' );
+	// Get settings - first check page-specific settings, then fallback to global settings
+	$page_options = get_post_meta( $post_id, 'grid_aware_wp_page_options', true );
+	$global_options = get_option( 'grid_aware_wp_options', array(
+		'images'     => '1',
+		'videos'     => '1',
+		'typography' => '1',
+	) );
+
+	// Use page-specific settings only if 'videos' key is set, otherwise fallback to global
+	if ( ! empty( $page_options ) && isset( $page_options['videos'] ) ) {
+		$settings = $page_options;
+		$settings_source = 'page';
+	} else {
+		$settings = $global_options;
+		$settings_source = 'global';
+	}
+
+	// Debug: Log which settings are being used
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		error_log( 'Grid Aware WP: Using ' . $settings_source . ' settings for videos: ' . print_r( $settings, true ) );
+	}
+
+	// If videos are disabled or not set, return original content immediately
+	if ( ! isset( $settings['videos'] ) || '0' === $settings['videos'] ) {
+		// Debug: Log the block content before returning
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Grid Aware WP - YouTube embed block content before returning (videos disabled): ' . $block_content );
+			error_log( 'Grid Aware WP - Videos are disabled, returning original content' );
+		}
+		// Return the original block content without any modifications
+		return $block_content;
+	}
+
+	// Check if this is a YouTube embed
+	$is_youtube = false;
+	$video_url = '';
+	$video_title = '';
+	$video_id = '';
+
+	// Check if it's a YouTube embed by looking for YouTube URLs in the content
+	if ( preg_match( '/youtube\.com|youtu\.be/', $block_content ) ) {
+		$is_youtube = true;
+		
+		// Try to extract the video URL
+		if ( preg_match( '/src="([^"]*youtube[^"]*)"/i', $block_content, $url_matches ) ) {
+			$video_url = $url_matches[1];
+		}
+		
+		// Try to extract title from iframe title attribute
+		if ( preg_match( '/title="([^"]*)"/i', $block_content, $title_matches ) ) {
+			$video_title = $title_matches[1];
+		}
+		
+		// Extract YouTube video ID from various URL formats
+		if ( preg_match( '/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/', $video_url, $embed_matches ) ) {
+			$video_id = $embed_matches[1];
+		} elseif ( preg_match( '/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/', $video_url, $watch_matches ) ) {
+			$video_id = $watch_matches[1];
+		} elseif ( preg_match( '/youtu\.be\/([a-zA-Z0-9_-]+)/', $video_url, $short_matches ) ) {
+			$video_id = $short_matches[1];
+		}
+	}
+
+	// If it's not a YouTube embed, return original content
+	if ( ! $is_youtube ) {
+		return $block_content;
+	}
+
+	// Get current grid intensity from URL
+	$grid_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
+
+	// Debug: Log the grid intensity and block content before processing
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		error_log( 'Grid Aware WP - Current grid intensity for YouTube: ' . $grid_intensity );
+		error_log( 'Grid Aware WP - YouTube block content before processing: ' . $block_content );
+	}
+
+	// If grid intensity is high, don't display the video
+	if ( 'high' === $grid_intensity ) {
+		// Extract dimensions from the iframe
+		$video_width = '';
+		$video_height = '';
+		$video_style = '';
+		
+		// Extract dimensions from the iframe tag
+		if ( preg_match( '/width="(\d+)"/', $block_content, $width_matches ) ) {
+			$video_width = $width_matches[1];
+		}
+		if ( preg_match( '/height="(\d+)"/', $block_content, $height_matches ) ) {
+			$video_height = $height_matches[1];
+		}
+		
+		// Extract style attribute if present
+		if ( preg_match( '/style="([^"]*)"/', $block_content, $style_matches ) ) {
+			$video_style = $style_matches[1];
+		}
+		
+		// Build style attribute for placeholder using CSS custom properties
+		$placeholder_style = '';
+		if ( $video_width ) {
+			$placeholder_style .= '--video-width: ' . $video_width . 'px; ';
+		}
+		if ( $video_style ) {
+			$placeholder_style .= $video_style . '; ';
+		}
+		
+		// If there's no title, show the placeholder message
+		if ( empty( $video_title ) ) {
+			$placeholder = sprintf(
+				'<div class="grid-aware-video-placeholder" data-original-video="%s" onclick="gridAwareWPLoadVideo(this)"%s>
+					<div class="placeholder-content">
+						<p class="placeholder-message">%s</p>
+						<p class="placeholder-click-hint">%s</p>
+					</div>
+				</div>',
+				esc_attr( $block_content ),
+				! empty( $placeholder_style ) ? ' style="' . esc_attr( $placeholder_style ) . '"' : '',
+				esc_html__( 'This video has not been loaded because the grid intensity is high.', 'grid-aware-wp' ),
+				esc_html__( 'Click to load video', 'grid-aware-wp' )
+			);
+			return $placeholder;
+		}
+
+		// If there is a title, show it with a placeholder message
+		return sprintf(
+			'<div class="grid-aware-video-placeholder" data-original-video="%s" onclick="gridAwareWPLoadVideo(this)"%s>
+				<div class="placeholder-content">
+					<p class="placeholder-title">%s</p>
+					<p class="placeholder-message">%s</p>
+					<p class="placeholder-click-hint">%s</p>
+				</div>
+			</div>',
+			esc_attr( $block_content ),
+			! empty( $placeholder_style ) ? ' style="' . esc_attr( $placeholder_style ) . '"' : '',
+			esc_html( $video_title ),
+			esc_html__( 'This video has not been loaded because the grid intensity is high.', 'grid-aware-wp' ),
+			esc_html__( 'Click to load video', 'grid-aware-wp' )
+		);
+	}
+
+	// For medium intensity, show YouTube thumbnail instead of iframe
+	if ( 'medium' === $grid_intensity ) {
+		// If we have a video ID, show the thumbnail
+		if ( ! empty( $video_id ) ) {
+			// Extract dimensions from the iframe
+			$video_width = '';
+			$video_height = '';
+			$video_style = '';
+			
+			// Extract dimensions from the iframe tag
+			if ( preg_match( '/width="(\d+)"/', $block_content, $width_matches ) ) {
+				$video_width = $width_matches[1];
+			}
+			if ( preg_match( '/height="(\d+)"/', $block_content, $height_matches ) ) {
+				$video_height = $height_matches[1];
+			}
+			
+			// Extract style attribute if present
+			if ( preg_match( '/style="([^"]*)"/', $block_content, $style_matches ) ) {
+				$video_style = $style_matches[1];
+			}
+			
+			// Build style attribute for thumbnail using CSS custom properties
+			$thumbnail_style = '';
+			// Use 100% width for responsive behavior instead of fixed pixel width
+			$thumbnail_style .= '--video-width: 100%; ';
+			if ( $video_style ) {
+				$thumbnail_style .= $video_style . '; ';
+			}
+			
+			// YouTube thumbnail URL (maxresdefault.jpg for highest quality, fallback to hqdefault.jpg)
+			$thumbnail_url = 'https://img.youtube.com/vi/' . $video_id . '/maxresdefault.jpg';
+			
+			// If there's no title, show the thumbnail with a message
+			if ( empty( $video_title ) ) {
+				$thumbnail = sprintf(
+					'<div class="grid-aware-video-thumbnail" data-original-video="%s" onclick="gridAwareWPLoadVideo(this)"%s>
+						<img src="%s" alt="%s" loading="lazy" />
+						<div class="thumbnail-overlay">
+							<div class="play-button">▶</div>
+							<p class="thumbnail-message">%s</p>
+						</div>
+					</div>',
+					esc_attr( $block_content ),
+					! empty( $thumbnail_style ) ? ' style="' . esc_attr( $thumbnail_style ) . '"' : '',
+					esc_url( $thumbnail_url ),
+					esc_attr__( 'YouTube video thumbnail', 'grid-aware-wp' ),
+					esc_html__( 'Click to load video', 'grid-aware-wp' )
+				);
+				return $thumbnail;
+			}
+
+			// If there is a title, show it with the thumbnail
+			return sprintf(
+				'<div class="grid-aware-video-thumbnail" data-original-video="%s" onclick="gridAwareWPLoadVideo(this)"%s>
+					<img src="%s" alt="%s" loading="lazy" />
+					<div class="thumbnail-overlay">
+						<div class="play-button">▶</div>
+						<p class="thumbnail-title">%s</p>
+						<p class="thumbnail-message">%s</p>
+					</div>
+				</div>',
+				esc_attr( $block_content ),
+				! empty( $thumbnail_style ) ? ' style="' . esc_attr( $thumbnail_style ) . '"' : '',
+				esc_url( $thumbnail_url ),
+				esc_attr( $video_title ),
+				esc_html( $video_title ),
+				esc_html__( 'Click to load video', 'grid-aware-wp' )
+			);
+		}
+		
+		// Fallback: if no video ID found, add lazy loading to iframe
+		if ( ! preg_match( '/loading="lazy"/i', $block_content ) ) {
+			$block_content = preg_replace(
+				'/<iframe([^>]+)>/i',
+				'<iframe$1 loading="lazy">',
+				$block_content
+			);
+		}
+	}
+
+	// For low intensity, keep original video but add lazy loading
+	if ( 'low' === $grid_intensity ) {
+		// Add loading="lazy" to iframe if not already present
+		if ( ! preg_match( '/loading="lazy"/i', $block_content ) ) {
+			$block_content = preg_replace(
+				'/<iframe([^>]+)>/i',
+				'<iframe$1 loading="lazy">',
+				$block_content
+			);
+		}
+	}
+
+	return $block_content;
 }
-add_action( 'wp_body_open', 'grid_aware_wp_add_intensity_switcher' );
-*/
+add_filter( 'render_block_core/embed', 'grid_aware_wp_filter_youtube_embed_block', 999, 2 );

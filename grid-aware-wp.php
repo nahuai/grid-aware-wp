@@ -3,7 +3,7 @@
  * Plugin Name: Grid Aware WordPress
  * Plugin URI: https://github.com/nahuai/grid-aware-wp
  * Description: A plugin that helps manage and optimize grid-based content in WordPress.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Nahuai
  * Author URI: https://github.com/nahuai
  * License: GPL v2 or later
@@ -299,7 +299,7 @@ function grid_aware_wp_settings_page() {
  * Section callback
  */
 function grid_aware_wp_section_callback() {
-    echo '<p>' . esc_html__( 'Select which features you want to enable:', 'grid-aware-wp' ) . '</p>';
+	echo '<p>' . esc_html__( 'Select which features you want to enable:', 'grid-aware-wp' ) . '</p>';
 }
 
 /**
@@ -349,7 +349,7 @@ function grid_aware_wp_activate() {
 		'typography' => '1',
 	);
 	add_option( 'grid_aware_wp_options', $default_options );
-	
+
 	// Add activation redirect flag
 	add_option( 'grid_aware_wp_do_activation_redirect', true );
 }
@@ -452,7 +452,7 @@ function grid_aware_wp_options_sanitize( $new_value, $old_value = null ) {
  */
 function grid_aware_wp_get_settings( $request ) {
 	$post_id = $request->get_param( 'post_id' );
-	
+
 	if ( $post_id ) {
 		// Get page-specific settings
 		$page_options = get_post_meta( $post_id, 'grid_aware_wp_page_options', true );
@@ -460,7 +460,7 @@ function grid_aware_wp_get_settings( $request ) {
 			return rest_ensure_response( $page_options );
 		}
 	}
-	
+
 	// Fallback to global settings
 	$options = get_option(
 		'grid_aware_wp_options',
@@ -480,10 +480,10 @@ function grid_aware_wp_update_settings( $request ) {
 	$params = $request->get_params();
 	$options = isset( $params['options'] ) ? $params['options'] : array();
 	$post_id = $request->get_param( 'post_id' );
-	
+
 	// Sanitize the options
 	$options = grid_aware_wp_options_sanitize( $options, get_option( 'grid_aware_wp_options' ) );
-	
+
 	if ( $post_id ) {
 		// Update page-specific settings
 		update_post_meta( $post_id, 'grid_aware_wp_page_options', $options );
@@ -491,7 +491,7 @@ function grid_aware_wp_update_settings( $request ) {
 		// Update global settings
 		update_option( 'grid_aware_wp_options', $options );
 	}
-	
+
 	return rest_ensure_response( $options );
 }
 
@@ -500,14 +500,14 @@ function grid_aware_wp_update_settings( $request ) {
  */
 function grid_aware_wp_get_current_intensity( $request ) {
 	$zone = $request->get_param( 'zone' );
-	
+
 	// If zone is provided, use it; otherwise get from IP
 	if ( ! empty( $zone ) ) {
 		$intensity_data = Grid_Aware_WP_Electricity_Maps_API::get_carbon_intensity( $zone );
 	} else {
 		$intensity_data = Grid_Aware_WP_Electricity_Maps_API::get_current_intensity_level();
 	}
-	
+
 	if ( is_wp_error( $intensity_data ) ) {
 		return new WP_Error(
 			'intensity_error',
@@ -515,7 +515,7 @@ function grid_aware_wp_get_current_intensity( $request ) {
 			array( 'status' => 400 )
 		);
 	}
-	
+
 	return rest_ensure_response( $intensity_data );
 }
 
@@ -525,7 +525,7 @@ function grid_aware_wp_get_current_intensity( $request ) {
 function grid_aware_wp_test_api_connection( $request ) {
 	$api_key = $request->get_param( 'api_key' );
 	$zone = $request->get_param( 'zone' );
-	
+
 	if ( empty( $api_key ) ) {
 		return new WP_Error(
 			'missing_api_key',
@@ -533,10 +533,10 @@ function grid_aware_wp_test_api_connection( $request ) {
 			array( 'status' => 400 )
 		);
 	}
-	
+
 	// Test the API connection
 	$test_result = Grid_Aware_WP_Electricity_Maps_API::get_carbon_intensity( $zone, $api_key );
-	
+
 	if ( is_wp_error( $test_result ) ) {
 		return new WP_Error(
 			'api_test_failed',
@@ -544,12 +544,14 @@ function grid_aware_wp_test_api_connection( $request ) {
 			array( 'status' => 400 )
 		);
 	}
-	
-	return rest_ensure_response( array(
-		'success' => true,
-		'message' => __( 'API connection successful.', 'grid-aware-wp' ),
-		'data'    => $test_result,
-	) );
+
+	return rest_ensure_response(
+		array(
+			'success' => true,
+			'message' => __( 'API connection successful.', 'grid-aware-wp' ),
+			'data'    => $test_result,
+		)
+	);
 }
 
 /**
@@ -598,111 +600,48 @@ function grid_aware_wp_add_intensity_switcher() {
 add_action( 'wp_body_open', 'grid_aware_wp_add_intensity_switcher' );
 
 /**
- * Enqueue frontend assets
+ * Register lite-youtube assets for conditional loading
  */
-function grid_aware_wp_enqueue_frontend_assets() {
-	// Only enqueue on frontend
-	if ( is_admin() ) {
-		return;
-	}
-
-	// Get current page/post ID
-	$post_id = get_the_ID();
-	
-	// Get settings - first check page-specific settings, then fallback to global settings
-	$page_options = get_post_meta( $post_id, 'grid_aware_wp_page_options', true );
-	$global_options = get_option( 'grid_aware_wp_options', array(
-		'images'     => '1',
-		'videos'     => '1',
-		'typography' => '1',
-	) );
-	
-	// Use page-specific settings if available, otherwise use global settings
-	$settings = ! empty( $page_options ) ? $page_options : $global_options;
-
-	// Enqueue wp-api-settings for REST API access
-	wp_enqueue_script( 'wp-api' );
-
-	// Enqueue frontend styles
-	wp_enqueue_style(
-		'grid-aware-wp-frontend',
-		GRID_AWARE_WP_PLUGIN_URL . 'assets/css/frontend.css',
+function grid_aware_wp_register_lite_youtube_assets() {
+	wp_register_script(
+		'lite-youtube',
+		plugins_url( 'assets/js/lite-yt-embed.js', __FILE__ ),
 		array(),
-		GRID_AWARE_WP_VERSION
-	);
-
-	// Enqueue frontend scripts
-	wp_enqueue_script(
-		'grid-aware-wp-frontend',
-		GRID_AWARE_WP_PLUGIN_URL . 'assets/js/frontend.js',
-		array( 'wp-api' ),
-		GRID_AWARE_WP_VERSION,
+		'0.2.0',
 		true
 	);
-
-	// Add inline script with settings and initial intensity
-	$initial_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
-	wp_add_inline_script(
-		'grid-aware-wp-frontend',
-		sprintf(
-			'window.gridAwareWPSettings = %s; window.gridAwareWPInitialIntensity = %s;',
-			wp_json_encode( $settings ),
-			wp_json_encode( $initial_intensity )
-		),
-		'before'
+	wp_register_style(
+		'lite-youtube',
+		plugins_url( 'assets/css/lite-yt-embed.css', __FILE__ ),
+		array(),
+		'0.2.0'
 	);
-
-	// Only load click-to-load JavaScript if videos are enabled and grid intensity is high or medium
-	if ( isset( $settings['videos'] ) && '1' === $settings['videos'] && ( 'high' === $initial_intensity || 'medium' === $initial_intensity ) ) {
-		// Check if the current post has YouTube embeds
-		$post_content = get_post_field( 'post_content', $post_id );
-		if ( $post_content && ( strpos( $post_content, 'youtube.com' ) !== false || strpos( $post_content, 'youtu.be' ) !== false ) ) {
-			wp_add_inline_script(
-				'grid-aware-wp-frontend',
-				'
-				window.gridAwareWPLoadVideo = function(element) {
-					var originalVideo = element.getAttribute("data-original-video");
-					if (originalVideo) {
-						element.innerHTML = originalVideo;
-						element.classList.remove("grid-aware-video-placeholder", "grid-aware-video-thumbnail");
-						element.classList.add("grid-aware-video-loaded");
-					}
-				};
-				',
-				'before'
-			);
-		}
-	}
-
-	// Only load click-to-load JavaScript if images are enabled and grid intensity is high or medium
-	if ( isset( $settings['images'] ) && '1' === $settings['images'] && ( 'high' === $initial_intensity || 'medium' === $initial_intensity ) ) {
-		// Check if the current post has image blocks
-		$post_content = get_post_field( 'post_content', $post_id );
-		if ( $post_content && strpos( $post_content, '<!-- wp:image' ) !== false ) {
-			wp_add_inline_script(
-				'grid-aware-wp-frontend',
-				'
-				window.gridAwareWPLoadImage = function(element) {
-					var originalImage = element.getAttribute("data-original-image");
-					if (originalImage) {
-						element.innerHTML = originalImage;
-						element.classList.remove("grid-aware-image-placeholder", "grid-aware-image-blurred");
-						element.classList.add("grid-aware-image-loaded");
-						
-						// Remove blur filter from the loaded image
-						var img = element.querySelector("img");
-						if (img) {
-							img.style.filter = "none";
-						}
-					}
-				};
-				',
-				'before'
-			);
-		}
-	}
 }
-add_action( 'wp_enqueue_scripts', 'grid_aware_wp_enqueue_frontend_assets' );
+add_action( 'init', 'grid_aware_wp_register_lite_youtube_assets' );
+
+/**
+ * Enqueue lite-youtube assets only when YouTube embeds are present
+ */
+function grid_aware_wp_enqueue_lite_youtube_assets( $block_content, $block ) {
+	// Check if this is a YouTube embed
+	if ( 'core/embed' === $block['blockName'] ) {
+		$is_youtube = false;
+		
+		// Check if it's a YouTube embed by looking for YouTube URLs in the content
+		if ( preg_match( '/youtube\.com|youtu\.be/', $block_content ) ) {
+			$is_youtube = true;
+		}
+		
+		// If it's a YouTube embed, enqueue the lite-youtube assets
+		if ( $is_youtube ) {
+			wp_enqueue_script( 'lite-youtube' );
+			wp_enqueue_style( 'lite-youtube' );
+		}
+	}
+	
+	return $block_content;
+}
+add_filter( 'render_block', 'grid_aware_wp_enqueue_lite_youtube_assets', 10, 2 );
 
 /**
  * Filter image blocks based on grid intensity
@@ -725,18 +664,12 @@ function grid_aware_wp_filter_image_block( $block_content, $block ) {
 		'typography' => '1',
 	) );
 
-	// Use page-specific settings only if 'images' key is set, otherwise fallback to global
-	if ( ! empty( $page_options ) && isset( $page_options['images'] ) ) {
-		$settings = $page_options;
-		$settings_source = 'page';
-	} else {
-		$settings = $global_options;
-		$settings_source = 'global';
-	}
+	// Use page-specific settings if available, otherwise use global settings
+	$settings = ! empty( $page_options ) ? $page_options : $global_options;
 
 	// Debug: Log which settings are being used
 	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( 'Grid Aware WP: Using ' . $settings_source . ' settings: ' . print_r( $settings, true ) );
+		error_log( 'Grid Aware WP: Using settings: ' . print_r( $settings, true ) );
 	}
 
 	// If images are disabled or not set, return original content immediately
@@ -909,6 +842,21 @@ function grid_aware_wp_filter_image_block( $block_content, $block ) {
 		);
 	}
 
+	// For live intensity (default), convert to nocookie domain and add lazy loading
+	if ( 'live' === $grid_intensity ) {
+		// Convert to nocookie domain first
+		$block_content = grid_aware_wp_convert_youtube_to_nocookie( $block_content );
+		
+		// Add loading="lazy" to iframe if not already present
+		if ( ! preg_match( '/loading="lazy"/i', $block_content ) ) {
+			$block_content = preg_replace(
+				'/<iframe([^>]+)>/i',
+				'<iframe$1 loading="lazy">',
+				$block_content
+			);
+		}
+	}
+
 	return $block_content;
 }
 add_filter( 'render_block_core/image', 'grid_aware_wp_filter_image_block', 999, 2 );
@@ -917,60 +865,63 @@ add_filter( 'render_block_core/image', 'grid_aware_wp_filter_image_block', 999, 
  * Filter theme.json data to use system fonts when grid intensity is high
  */
 function grid_aware_wp_filter_theme_json_fonts( $theme_json ) {
-    // Get current grid intensity from URL
-    $grid_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
-    
-    // Get current page/post ID
-    $post_id = get_the_ID();
-    
-    // Get settings - first check page-specific settings, then fallback to global settings
-    $page_options = get_post_meta( $post_id, 'grid_aware_wp_page_options', true );
-    $global_options = get_option( 'grid_aware_wp_options', array(
-        'images'     => '1',
-        'videos'     => '1',
-        'typography' => '1',
-    ) );
-    
-    // Use page-specific settings if available, otherwise use global settings
-    $settings = ! empty( $page_options ) ? $page_options : $global_options;
-    
-    // If typography is disabled or not set, return original theme.json
-    if ( ! isset( $settings['typography'] ) || '0' === $settings['typography'] ) {
-        return $theme_json;
-    }
-    
-    // If grid intensity is high, replace all font families with system fonts
-    if ( 'high' === $grid_intensity ) {
-        $new_data = array(
-            'version'  => 2,
-            'settings' => array(
-                'typography' => array(
-                    'fontFamilies' => array(
-                        array(
-                            'fontFamily' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
-                            'name'       => 'System Font',
-                            'slug'       => 'system',
-                        ),
-                    ),
-                ),
-            ),
-        );
+	// Get current grid intensity from URL
+	$grid_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
 
-        // Update the theme.json data with our system font configuration
-        return $theme_json->update_with( $new_data );
-    }
+	// Get current page/post ID
+	$post_id = get_the_ID();
 
-    return $theme_json;
+	// Get settings - first check page-specific settings, then fallback to global settings
+	$page_options = get_post_meta( $post_id, 'grid_aware_wp_page_options', true );
+	$global_options = get_option(
+		'grid_aware_wp_options',
+		array(
+			'images'     => '1',
+			'videos'     => '1',
+			'typography' => '1',
+		)
+	);
+
+	// Use page-specific settings if available, otherwise use global settings
+	$settings = ! empty( $page_options ) ? $page_options : $global_options;
+
+	// If typography is disabled or not set, return original theme.json
+	if ( ! isset( $settings['typography'] ) || '0' === $settings['typography'] ) {
+		return $theme_json;
+	}
+
+	// If grid intensity is high, replace all font families with system fonts
+	if ( 'high' === $grid_intensity ) {
+		$new_data = array(
+			'version'  => 2,
+			'settings' => array(
+				'typography' => array(
+					'fontFamilies' => array(
+						array(
+							'fontFamily' => '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+							'name'       => 'System Font',
+							'slug'       => 'system',
+						),
+					),
+				),
+			),
+		);
+
+		// Update the theme.json data with our system font configuration
+		return $theme_json->update_with( $new_data );
+	}
+
+	return $theme_json;
 }
 
 /**
  * Apply the theme.json filter after theme setup
  */
 function grid_aware_wp_apply_theme_json_filters() {
-    // Check if the theme has a theme.json file
-    if ( wp_theme_has_theme_json() ) {
-        add_filter( 'wp_theme_json_data_theme', 'grid_aware_wp_filter_theme_json_fonts' );
-    }
+	// Check if the theme has a theme.json file
+	if ( wp_theme_has_theme_json() ) {
+		add_filter( 'wp_theme_json_data_theme', 'grid_aware_wp_filter_theme_json_fonts' );
+	}
 }
 add_action( 'after_setup_theme', 'grid_aware_wp_apply_theme_json_filters' );
 
@@ -1007,6 +958,51 @@ function grid_aware_wp_enqueue_admin_assets( $hook ) {
 	wp_enqueue_style( 'wp-components' );
 }
 add_action( 'admin_enqueue_scripts', 'grid_aware_wp_enqueue_admin_assets' );
+
+/**
+ * Convert YouTube URLs to use the nocookie domain for privacy
+ *
+ * @param string $content The HTML content containing YouTube embeds.
+ * @return string The content with YouTube URLs converted to nocookie domain.
+ */
+function grid_aware_wp_convert_youtube_to_nocookie( $content ) {
+	// Use WP_HTML_Tag_Processor for better HTML parsing
+	$processor = new \WP_HTML_Tag_Processor( $content );
+	
+	while ( $processor->next_tag( 'iframe' ) ) {
+		$src = $processor->get_attribute( 'src' );
+		if ( $src && ( strpos( $src, 'youtube.com' ) !== false || strpos( $src, 'youtu.be' ) !== false ) ) {
+			// Convert to nocookie domain
+			$src = str_replace( 'youtube.com', 'youtube-nocookie.com', $src );
+			$src = str_replace( 'youtu.be', 'youtube-nocookie.com', $src );
+			
+			// Add rel=0 parameter to prevent related videos
+			if ( strpos( $src, '?feature=oembed' ) !== false ) {
+				$src = str_replace( '?feature=oembed', '?feature=oembed&rel=0', $src );
+			} elseif ( strpos( $src, '?' ) !== false ) {
+				$src .= '&rel=0';
+			} else {
+				$src .= '?rel=0';
+			}
+			
+			$processor->set_attribute( 'src', $src );
+		}
+	}
+	
+	return $processor->get_updated_html();
+}
+
+// Helper to output lite-youtube element
+function grid_aware_wp_lite_youtube_html( $video_id, $video_title = '' ) {
+	if ( empty( $video_title ) ) {
+		$video_title = __( 'YouTube video', 'grid-aware-wp' );
+	}
+	return sprintf(
+		'<lite-youtube videoid="%s" style="width:100%%;aspect-ratio:16/9;" title="%s"></lite-youtube>',
+		esc_attr( $video_id ),
+		esc_attr( $video_title )
+	);
+}
 
 /**
  * Filter YouTube embed blocks based on grid intensity
@@ -1127,6 +1123,9 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 			$placeholder_style .= $video_style . '; ';
 		}
 		
+		// Convert the original content to use nocookie domain for when it's loaded
+		$original_content_with_nocookie = grid_aware_wp_convert_youtube_to_nocookie( $block_content );
+		
 		// If there's no title, show the placeholder message
 		if ( empty( $video_title ) ) {
 			$placeholder = sprintf(
@@ -1136,7 +1135,7 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 						<p class="placeholder-click-hint">%s</p>
 					</div>
 				</div>',
-				esc_attr( $block_content ),
+				esc_attr( $original_content_with_nocookie ),
 				! empty( $placeholder_style ) ? ' style="' . esc_attr( $placeholder_style ) . '"' : '',
 				esc_html__( 'This video has not been loaded because the grid intensity is high.', 'grid-aware-wp' ),
 				esc_html__( 'Click to load video', 'grid-aware-wp' )
@@ -1153,7 +1152,7 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 					<p class="placeholder-click-hint">%s</p>
 				</div>
 			</div>',
-			esc_attr( $block_content ),
+			esc_attr( $original_content_with_nocookie ),
 			! empty( $placeholder_style ) ? ' style="' . esc_attr( $placeholder_style ) . '"' : '',
 			esc_html( $video_title ),
 			esc_html__( 'This video has not been loaded because the grid intensity is high.', 'grid-aware-wp' ),
@@ -1194,6 +1193,9 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 			// YouTube thumbnail URL (maxresdefault.jpg for highest quality, fallback to hqdefault.jpg)
 			$thumbnail_url = 'https://img.youtube.com/vi/' . $video_id . '/maxresdefault.jpg';
 			
+			// Convert the original content to use nocookie domain for when it's loaded
+			$original_content_with_nocookie = grid_aware_wp_convert_youtube_to_nocookie( $block_content );
+			
 			// If there's no title, show the thumbnail with a message
 			if ( empty( $video_title ) ) {
 				$thumbnail = sprintf(
@@ -1204,7 +1206,7 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 							<p class="thumbnail-message">%s</p>
 						</div>
 					</div>',
-					esc_attr( $block_content ),
+					esc_attr( $original_content_with_nocookie ),
 					! empty( $thumbnail_style ) ? ' style="' . esc_attr( $thumbnail_style ) . '"' : '',
 					esc_url( $thumbnail_url ),
 					esc_attr__( 'YouTube video thumbnail', 'grid-aware-wp' ),
@@ -1223,7 +1225,7 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 						<p class="thumbnail-message">%s</p>
 					</div>
 				</div>',
-				esc_attr( $block_content ),
+				esc_attr( $original_content_with_nocookie ),
 				! empty( $thumbnail_style ) ? ' style="' . esc_attr( $thumbnail_style ) . '"' : '',
 				esc_url( $thumbnail_url ),
 				esc_attr( $video_title ),
@@ -1232,7 +1234,8 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 			);
 		}
 		
-		// Fallback: if no video ID found, add lazy loading to iframe
+		// Fallback: if no video ID found, add lazy loading to iframe and convert to nocookie
+		$block_content = grid_aware_wp_convert_youtube_to_nocookie( $block_content );
 		if ( ! preg_match( '/loading="lazy"/i', $block_content ) ) {
 			$block_content = preg_replace(
 				'/<iframe([^>]+)>/i',
@@ -1242,8 +1245,11 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 		}
 	}
 
-	// For low intensity, keep original video but add lazy loading
+	// For low intensity, keep original video but add lazy loading and convert to nocookie
 	if ( 'low' === $grid_intensity ) {
+		// Convert to nocookie domain first
+		$block_content = grid_aware_wp_convert_youtube_to_nocookie( $block_content );
+		
 		// Add loading="lazy" to iframe if not already present
 		if ( ! preg_match( '/loading="lazy"/i', $block_content ) ) {
 			$block_content = preg_replace(
@@ -1254,6 +1260,129 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 		}
 	}
 
+	// For live intensity (default), convert to nocookie domain and add lazy loading
+	if ( 'live' === $grid_intensity ) {
+		// Convert to nocookie domain first
+		$block_content = grid_aware_wp_convert_youtube_to_nocookie( $block_content );
+		
+		// Add loading="lazy" to iframe if not already present
+		if ( ! preg_match( '/loading="lazy"/i', $block_content ) ) {
+			$block_content = preg_replace(
+				'/<iframe([^>]+)>/i',
+				'<iframe$1 loading="lazy">',
+				$block_content
+			);
+		}
+	}
+
+	if ( $video_id ) {
+		return grid_aware_wp_lite_youtube_html( $video_id, $video_title );
+	}
+
 	return $block_content;
 }
 add_filter( 'render_block_core/embed', 'grid_aware_wp_filter_youtube_embed_block', 999, 2 );
+
+/**
+ * Enqueue frontend assets
+ */
+function grid_aware_wp_enqueue_frontend_assets() {
+	// Only enqueue on frontend
+	if ( is_admin() ) {
+		return;
+	}
+
+	// Get current page/post ID
+	$post_id = get_the_ID();
+	
+	// Get settings - first check page-specific settings, then fallback to global settings
+	$page_options = get_post_meta( $post_id, 'grid_aware_wp_page_options', true );
+	$global_options = get_option( 'grid_aware_wp_options', array(
+		'images'     => '1',
+		'videos'     => '1',
+		'typography' => '1',
+	) );
+	
+	// Use page-specific settings if available, otherwise use global settings
+	$settings = ! empty( $page_options ) ? $page_options : $global_options;
+
+	// Enqueue frontend styles
+	wp_enqueue_style(
+		'grid-aware-wp-frontend',
+		GRID_AWARE_WP_PLUGIN_URL . 'assets/css/frontend.css',
+		array(),
+		GRID_AWARE_WP_VERSION
+	);
+
+	// Enqueue frontend scripts (no wp-api dependency)
+	wp_enqueue_script(
+		'grid-aware-wp-frontend',
+		GRID_AWARE_WP_PLUGIN_URL . 'assets/js/frontend.js',
+		array(), // No wp-api!
+		GRID_AWARE_WP_VERSION,
+		true
+	);
+
+	// Add inline script with settings and initial intensity
+	$initial_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
+	wp_add_inline_script(
+		'grid-aware-wp-frontend',
+		sprintf(
+			'window.gridAwareWPSettings = %s; window.gridAwareWPInitialIntensity = %s;',
+			wp_json_encode( $settings ),
+			wp_json_encode( $initial_intensity )
+		),
+		'before'
+	);
+
+	// Only load click-to-load JavaScript if videos are enabled and grid intensity is high or medium
+	if ( isset( $settings['videos'] ) && '1' === $settings['videos'] && ( 'high' === $initial_intensity || 'medium' === $initial_intensity ) ) {
+		// Check if the current post has YouTube embeds
+		$post_content = get_post_field( 'post_content', $post_id );
+		if ( $post_content && ( strpos( $post_content, 'youtube.com' ) !== false || strpos( $post_content, 'youtu.be' ) !== false ) ) {
+			wp_add_inline_script(
+				'grid-aware-wp-frontend',
+				'
+				window.gridAwareWPLoadVideo = function(element) {
+					var originalVideo = element.getAttribute("data-original-video");
+					if (originalVideo) {
+						element.innerHTML = originalVideo;
+						element.classList.remove("grid-aware-video-placeholder", "grid-aware-video-thumbnail");
+						element.classList.add("grid-aware-video-loaded");
+					}
+				};
+				',
+				'before'
+			);
+		}
+	}
+
+	// Only load click-to-load JavaScript if images are enabled and grid intensity is high or medium
+	if ( isset( $settings['images'] ) && '1' === $settings['images'] && ( 'high' === $initial_intensity || 'medium' === $initial_intensity ) ) {
+		// Check if the current post has image blocks
+		$post_content = get_post_field( 'post_content', $post_id );
+		if ( $post_content && strpos( $post_content, '<!-- wp:image' ) !== false ) {
+			wp_add_inline_script(
+				'grid-aware-wp-frontend',
+				'
+				window.gridAwareWPLoadImage = function(element) {
+					var originalImage = element.getAttribute("data-original-image");
+					if (originalImage) {
+						element.innerHTML = originalImage;
+						element.classList.remove("grid-aware-image-placeholder", "grid-aware-image-blurred");
+						element.classList.add("grid-aware-image-loaded");
+						
+						// Remove blur filter from the loaded image
+						var img = element.querySelector("img");
+						if (img) {
+							img.style.filter = "none";
+						}
+					}
+				};
+				',
+				'before'
+			);
+		}
+	}
+}
+add_action( 'wp_enqueue_scripts', 'grid_aware_wp_enqueue_frontend_assets' );

@@ -593,13 +593,17 @@ function grid_aware_wp_add_intensity_info_bar_and_switcher() {
 	?>
 	<div class="grid-intensity-info-bar">
 		<div class="grid-info-left">
-			<span class="grid-info-title">YOUR GRID INFO</span>
-				<span class="grid-info-country"><?php echo esc_html( $zone ); ?></span>
-				<span class="grid-info-intensity-label"><strong><?php echo esc_html( $intensity_label ); ?> INTENSITY</strong></span>
-				<span class="grid-info-carbon"><?php echo esc_html( $intensity_value ); ?> <?php echo wp_kses_post( $intensity_unit ); ?></span>
+			<span class="grid-info-title">YOUR GRID INFO
+				<span class="info-tooltip" tabindex="0" data-tooltip="Indicates how polluting power generation is at your location.">&#8505;</span>
+			</span>
+			<span class="grid-info-country"><?php echo esc_html( $zone ); ?></span>
+			<span class="grid-info-intensity-label"><strong><?php echo esc_html( $intensity_label ); ?> INTENSITY</strong></span>
+			<span class="grid-info-carbon"><?php echo esc_html( $intensity_value ); ?> <?php echo wp_kses_post( $intensity_unit ); ?></span>
 		</div>
 		<div class="grid-info-right">
-			<span class="grid-design-title">GRID-AWARE DESIGN</span>
+			<span class="grid-design-title">GRID-AWARE DESIGN
+				<span class="info-tooltip" tabindex="0" data-tooltip="The layout adapts based on the grid intensity detected at your location. You can also manually select the consumption mode.">&#8505;</span>
+			</span>
 			<span class="grid-intensity-toggle-bar">
 				<div class="carbon-switcher-wrapper in-bar">
 					<div class="carbon-switcher" style="font-family: inherit;">

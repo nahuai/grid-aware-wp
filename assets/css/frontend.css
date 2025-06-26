@@ -797,3 +797,48 @@
     background: #222;
     outline: none;
 }
+
+.info-tooltip {
+  display: inline-flex;
+  justify-content: center;
+  width: 1.35em;
+  height: 1.35em;
+  font-size: 1.1em;
+  font-family: inherit;
+  background: #222;
+  color: #fff;
+  border-radius: 50%;
+  margin-left: 0.4em;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  text-align: center;
+  line-height: 1.2em;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.info-tooltip::after {
+    content: attr(data-tooltip);
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+    background: #222;
+    color: #fff;
+    padding: 0.5em 1em;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: pre-line;
+    z-index: 1002;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    transition: opacity 0.2s;
+    width: 250px;
+}
+
+.info-tooltip:focus:after,
+.info-tooltip:hover:after {
+  opacity: 1;
+}

@@ -247,37 +247,6 @@ function grid_aware_wp_register_settings() {
 			'sanitize_callback' => 'grid_aware_wp_options_sanitize',
 		)
 	);
-
-	add_settings_section(
-		'grid_aware_wp_main_section',
-		__( 'Grid Settings', 'grid-aware-wp' ),
-		'grid_aware_wp_section_callback',
-		'grid-aware-wp'
-	);
-
-	add_settings_field(
-		'grid_aware_wp_images',
-		__( 'Images', 'grid-aware-wp' ),
-		'grid_aware_wp_images_callback',
-		'grid-aware-wp',
-		'grid_aware_wp_main_section'
-	);
-
-	add_settings_field(
-		'grid_aware_wp_videos',
-		__( 'Videos', 'grid-aware-wp' ),
-		'grid_aware_wp_videos_callback',
-		'grid-aware-wp',
-		'grid_aware_wp_main_section'
-	);
-
-	add_settings_field(
-		'grid_aware_wp_typography',
-		__( 'Typography', 'grid-aware-wp' ),
-		'grid_aware_wp_typography_callback',
-		'grid-aware-wp',
-		'grid_aware_wp_main_section'
-	);
 }
 add_action( 'admin_init', 'grid_aware_wp_register_settings' );
 
@@ -292,49 +261,6 @@ function grid_aware_wp_settings_page() {
 		
 		<div id="grid-aware-wp-settings"></div>
 	</div>
-	<?php
-}
-
-/**
- * Section callback
- */
-function grid_aware_wp_section_callback() {
-	echo '<p>' . esc_html__( 'Select which features you want to enable:', 'grid-aware-wp' ) . '</p>';
-}
-
-/**
- * Images field callback
- */
-function grid_aware_wp_images_callback() {
-	$options = get_option( 'grid_aware_wp_options', array( 'images' => '1' ) );
-	?>
-	<input type="checkbox" id="grid_aware_wp_images" name="grid_aware_wp_options[images]" value="1" <?php checked( isset( $options['images'] ) ? $options['images'] : '1', '1' ); ?> />
-	<label for="grid_aware_wp_images"><?php esc_html_e( 'Enable grid-aware image handling', 'grid-aware-wp' ); ?></label>
-	<p class="description"><?php esc_html_e( 'Optimizes images based on grid intensity, adjusting quality and loading strategies to reduce energy consumption.', 'grid-aware-wp' ); ?></p>
-	<?php
-}
-
-/**
- * Videos field callback
- */
-function grid_aware_wp_videos_callback() {
-	$options = get_option( 'grid_aware_wp_options', array( 'videos' => '1' ) );
-	?>
-	<input type="checkbox" id="grid_aware_wp_videos" name="grid_aware_wp_options[videos]" value="1" <?php checked( isset( $options['videos'] ) ? $options['videos'] : '1', '1' ); ?> />
-	<label for="grid_aware_wp_videos"><?php esc_html_e( 'Enable grid-aware video handling', 'grid-aware-wp' ); ?></label>
-	<p class="description"><?php esc_html_e( 'Manages video playback and quality based on grid conditions, potentially reducing resolution or deferring autoplay during high-intensity periods.', 'grid-aware-wp' ); ?></p>
-	<?php
-}
-
-/**
- * Typography field callback
- */
-function grid_aware_wp_typography_callback() {
-	$options = get_option( 'grid_aware_wp_options', array( 'typography' => '1' ) );
-	?>
-	<input type="checkbox" id="grid_aware_wp_typography" name="grid_aware_wp_options[typography]" value="1" <?php checked( isset( $options['typography'] ) ? $options['typography'] : '1', '1' ); ?> />
-	<label for="grid_aware_wp_typography"><?php esc_html_e( 'Enable grid-aware typography handling', 'grid-aware-wp' ); ?></label>
-	<p class="description"><?php esc_html_e( 'Adjusts font loading and rendering based on grid intensity, optimizing for energy efficiency while maintaining readability.', 'grid-aware-wp' ); ?></p>
 	<?php
 }
 

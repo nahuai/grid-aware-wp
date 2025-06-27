@@ -756,7 +756,29 @@
     text-align: center;
     pointer-events: none;
     padding: 60px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
+
+/* Show overlay on hover of the parent container */
+.grid-aware-image-blurred:hover .medium-overlay-always,
+.grid-aware-video-thumbnail:hover .medium-overlay-always {
+    opacity: 1;
+}
+
+/* Add subtle hover effects to parent containers */
+.grid-aware-image-blurred:hover,
+.grid-aware-video-thumbnail:hover {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
+}
+
+.grid-aware-image-blurred,
+.grid-aware-video-thumbnail {
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
 .medium-overlay-always .placeholder-alt,
 .medium-overlay-always .placeholder-description,
 .medium-overlay-always .placeholder-load-btn {

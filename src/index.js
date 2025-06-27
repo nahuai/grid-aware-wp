@@ -358,16 +358,6 @@ const GridAwareWPPanel = () => {
 			<p className="description">
 				{__('Adjusts font loading and rendering based on grid intensity, optimizing for energy efficiency while maintaining readability.', 'grid-aware-wp')}
 			</p>
-			<PanelRow>
-				<TextControl
-					label={__('Electricity Maps API Key', 'grid-aware-wp')}
-					value={options.api_key}
-					onChange={(val) => updateOption('api_key', val)}
-				/>
-			</PanelRow>
-			<p className="description">
-				{__('Enter your Electricity Maps API key. This will override the global setting.', 'grid-aware-wp')}
-			</p>
 			<div style={{ marginTop: '1.5em' }}>
 				<strong>{__('Preview with grid intensity:', 'grid-aware-wp')}</strong>
 				<div style={{ display: 'flex', gap: '0.5em', marginTop: '0.5em' }}>

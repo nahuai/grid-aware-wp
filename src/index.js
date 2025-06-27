@@ -17,6 +17,9 @@ import { registerPlugin } from '@wordpress/plugins';
 import { select } from '@wordpress/data';
 import apiFetch from '@wordpress/api-fetch';
 import './settings.css';
+import { createHigherOrderComponent } from '@wordpress/compose';
+import { Fragment } from '@wordpress/element';
+import { addFilter } from '@wordpress/hooks';
 
 const OPTION_NAME = 'grid_aware_wp_options';
 
@@ -412,4 +415,51 @@ if (window.wp?.plugins) {
 		render: GridIntensityPreview,
 		icon: wpPreviewIcon,
 	});
-} 
+}
+
+// Add a warning notice to the Image block in the editor
+const withGridAwareImageNotice = createHigherOrderComponent((BlockEdit) => {
+	return (props) => {
+		const isImageBlock = props.name === 'core/image';
+		const isYouTubeEmbed =
+			props.name === 'core/embed' &&
+			props.attributes &&
+			typeof props.attributes.url === 'string' &&
+			/^(https?:)?\/\/(www\.)?(youtube\.com|youtu\.be)\//.test(props.attributes.url);
+
+		if (isImageBlock || isYouTubeEmbed) {
+			return (
+				<Fragment>
+					<BlockEdit {...props} />
+					<Notice
+						status="warning"
+						isDismissible={false}
+					>
+						{isImageBlock && __('Images may display differently depending on the current grid intensity (Grid Aware WP).', 'grid-aware-wp')}
+						{isYouTubeEmbed && __('YouTube videos may display or behave differently depending on the current grid intensity (Grid Aware WP).', 'grid-aware-wp')}
+						<br />
+						{__('If you do not want this behavior, you can disable it in the ', 'grid-aware-wp')}
+						<a
+							href={window.location.origin + '/wp-admin/admin.php?page=grid-aware-wp'}
+							onClick={e => {
+								e.preventDefault();
+								window.open(window.location.origin + '/wp-admin/admin.php?page=grid-aware-wp', '_blank', 'noopener,noreferrer');
+							}}
+							rel="noopener noreferrer"
+						>
+							{__('Grid Aware WP plugin general settings', 'grid-aware-wp')}
+						</a>
+						{__(' or in the sidebar settings for this page.', 'grid-aware-wp')}
+					</Notice>
+				</Fragment>
+			);
+		}
+		return <BlockEdit {...props} />;
+	};
+}, 'withGridAwareImageNotice');
+
+addFilter(
+	'editor.BlockEdit',
+	'grid-aware-wp/with-grid-aware-image-notice',
+	withGridAwareImageNotice
+); 

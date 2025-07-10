@@ -37,8 +37,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	const urlParams = new URLSearchParams(window.location.search);
 	let intensity = urlParams.get('grid_intensity');
 	if (!intensity || intensity === 'live') {
-		intensity = 'low';
-		urlParams.set('grid_intensity', 'low');
+		intensity = window.gridAwareWPLiveIntensity || 'low';
+		urlParams.set('grid_intensity', intensity);
 		window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
 	}
 });

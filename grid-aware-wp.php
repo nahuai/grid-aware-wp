@@ -24,8 +24,23 @@ define( 'GRID_AWARE_WP_VERSION', '1.0.0' );
 define( 'GRID_AWARE_WP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GRID_AWARE_WP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-// Include required files
-require_once GRID_AWARE_WP_PLUGIN_DIR . 'includes/class-electricity-maps-api.php';
+// Prevent caching when grid_intensity is set (must be before any output)
+if ( isset( $_GET['grid_intensity'] ) ) {
+	header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0' );
+	header( 'Pragma: no-cache' );
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		error_log( 'Grid Aware WP: Sent cache-control headers for grid_intensity=' . $_GET['grid_intensity'] );
+	}
+}
+
+// Set the effective grid intensity as early as possible
+require_once __DIR__ . '/includes/class-electricity-maps-api.php';
+if ( isset( $_GET['grid_intensity'] ) && strtolower( $_GET['grid_intensity'] ) !== 'live' ) {
+	$GLOBALS['grid_aware_wp_effective_intensity'] = strtolower( sanitize_text_field( $_GET['grid_intensity'] ) );
+} else {
+	$data = Grid_Aware_WP_Electricity_Maps_API::get_current_intensity_level();
+	$GLOBALS['grid_aware_wp_effective_intensity'] = isset( $data['intensity_level'] ) ? strtolower( $data['intensity_level'] ) : 'low';
+}
 
 /**
  * Add admin notice for grid-aware functionality
@@ -509,8 +524,15 @@ function grid_aware_wp_add_intensity_info_bar_and_switcher() {
 	}
 	$intensity_unit = 'gCO<sub>2</sub>eq/kWh';
 
+	// Determine the effective grid intensity for this request
+	if ( isset( $_GET['grid_intensity'] ) && strtolower( $_GET['grid_intensity'] ) !== 'live' ) {
+		$GLOBALS['grid_aware_wp_effective_intensity'] = strtolower( sanitize_text_field( $_GET['grid_intensity'] ) );
+	} else {
+		$GLOBALS['grid_aware_wp_effective_intensity'] = isset( $data['intensity_level'] ) ? strtolower( $data['intensity_level'] ) : 'low';
+	}
+
 	// Get current intensity from URL
-	$current_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'low';
+	$current_intensity = isset( $_GET['grid_intensity'] ) ? strtolower( sanitize_text_field( $_GET['grid_intensity'] ) ) : 'low';
 	$intensities = array(
 		'low'    => __( 'LOW', 'grid-aware-wp' ),
 		'medium' => __( 'MEDIUM', 'grid-aware-wp' ),
@@ -551,6 +573,9 @@ function grid_aware_wp_add_intensity_info_bar_and_switcher() {
 			</span>
 		</div>
 	</div>
+	<script>
+	window.gridAwareWPLiveIntensity = '<?php echo esc_js( strtolower( $intensity_label ) ); ?>';
+	</script>
 	<?php
 }
 remove_action( 'wp_body_open', 'grid_aware_wp_add_intensity_info_bar', 5 );
@@ -566,11 +591,15 @@ function grid_aware_wp_add_body_class( $classes ) {
 		return $classes;
 	}
 
-	// Get current intensity from URL
-	$current_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'low';
+	// Determine the effective grid intensity for this request
+	if ( isset( $GLOBALS['grid_aware_wp_effective_intensity'] ) ) {
+		$effective_intensity = $GLOBALS['grid_aware_wp_effective_intensity'];
+	} else {
+		$effective_intensity = 'low';
+	}
 	
 	// Add the grid intensity class
-	$classes[] = 'grid-intensity-' . $current_intensity;
+	$classes[] = 'grid-intensity-' . $effective_intensity;
 	
 	return $classes;
 }
@@ -660,12 +689,16 @@ function grid_aware_wp_filter_image_block( $block_content, $block ) {
 		return $block_content;
 	}
 
-	// Get current grid intensity from URL
-	$grid_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
+	// Determine the effective grid intensity for this request
+	if ( isset( $GLOBALS['grid_aware_wp_effective_intensity'] ) ) {
+		$effective_intensity = $GLOBALS['grid_aware_wp_effective_intensity'];
+	} else {
+		$effective_intensity = 'live';
+	}
 	
 	// Debug: Log the grid intensity and block content before processing
 	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( 'Grid Aware WP - Current grid intensity: ' . $grid_intensity );
+		error_log( 'Grid Aware WP - Current grid intensity: ' . $effective_intensity );
 		error_log( 'Grid Aware WP - Block content before processing: ' . $block_content );
 	}
 	
@@ -731,7 +764,7 @@ function grid_aware_wp_filter_image_block( $block_content, $block ) {
 	}
 
 	// If grid intensity is high, don't display the image
-	if ( 'high' === $grid_intensity ) {
+	if ( 'high' === $effective_intensity ) {
 		// Build the placeholder HTML
 		$placeholder_html = sprintf(
 			'<div class="grid-aware-image-placeholder" data-original-image="%s" onclick="gridAwareWPLoadImage(this)"%s>
@@ -762,7 +795,7 @@ function grid_aware_wp_filter_image_block( $block_content, $block ) {
 	}
 
 	// For medium intensity, keep the image HTML and overlay a visible layer with alt, message, and button
-	if ( 'medium' === $grid_intensity ) {
+	if ( 'medium' === $effective_intensity ) {
 		$overlay_html = sprintf(
 			'<div class="medium-overlay-always">
 				%s
@@ -784,12 +817,12 @@ function grid_aware_wp_filter_image_block( $block_content, $block ) {
 	}
 
 	// For low intensity, return the original embed code without any modification
-	if ( 'low' === $grid_intensity ) {
+	if ( 'low' === $effective_intensity ) {
 		return $block_content;
 	}
 
 	// For live intensity (default), convert to nocookie domain and add lazy loading
-	if ( 'live' === $grid_intensity ) {
+	if ( 'live' === $effective_intensity ) {
 		// Convert to nocookie domain first
 		$block_content = grid_aware_wp_convert_youtube_to_nocookie( $block_content );
 		// Add loading="lazy" to iframe if not already present
@@ -810,8 +843,12 @@ add_filter( 'render_block_core/image', 'grid_aware_wp_filter_image_block', 999, 
  * Filter theme.json data to use system fonts when grid intensity is high
  */
 function grid_aware_wp_filter_theme_json_fonts( $theme_json ) {
-	// Get current grid intensity from URL
-	$grid_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
+	// Determine the effective grid intensity for this request
+	if ( isset( $GLOBALS['grid_aware_wp_effective_intensity'] ) ) {
+		$effective_intensity = $GLOBALS['grid_aware_wp_effective_intensity'];
+	} else {
+		$effective_intensity = 'live';
+	}
 
 	// Get current page/post ID
 	$post_id = get_the_ID();
@@ -833,7 +870,7 @@ function grid_aware_wp_filter_theme_json_fonts( $theme_json ) {
 	}
 
 	// If grid intensity is high, replace all font families with system fonts
-	if ( 'high' === $grid_intensity ) {
+	if ( 'high' === $effective_intensity ) {
 		$new_data = array(
 			'version'  => 2,
 			'settings' => array(
@@ -876,8 +913,12 @@ function grid_aware_wp_add_high_intensity_css() {
 		return;
 	}
 
-	// Get current grid intensity from URL
-	$grid_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
+	// Determine the effective grid intensity for this request
+	if ( isset( $GLOBALS['grid_aware_wp_effective_intensity'] ) ) {
+		$effective_intensity = $GLOBALS['grid_aware_wp_effective_intensity'];
+	} else {
+		$effective_intensity = 'live';
+	}
 
 	// Get current page/post ID
 	$post_id = get_the_ID();
@@ -899,7 +940,7 @@ function grid_aware_wp_add_high_intensity_css() {
 	}
 
 	// If grid intensity is high, add CSS to force Helvetica
-	if ( 'high' === $grid_intensity ) {
+	if ( 'high' === $effective_intensity ) {
 		$css = '
 		body, 
 		body *,
@@ -1041,52 +1082,21 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 		return $block_content;
 	}
 
-	// Check if this is a YouTube embed
-	$is_youtube = false;
-	$video_url = '';
-	$video_title = '';
-	$video_id = '';
-
-	// Check if it's a YouTube embed by looking for YouTube URLs in the content
-	if ( preg_match( '/youtube\.com|youtu\.be/', $block_content ) ) {
-		$is_youtube = true;
-		
-		// Try to extract the video URL
-		if ( preg_match( '/src="([^"]*youtube[^"]*)"/i', $block_content, $url_matches ) ) {
-			$video_url = $url_matches[1];
-		}
-		
-		// Try to extract title from iframe title attribute
-		if ( preg_match( '/title="([^"]*)"/i', $block_content, $title_matches ) ) {
-			$video_title = $title_matches[1];
-		}
-		
-		// Extract YouTube video ID from various URL formats
-		if ( preg_match( '/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/', $video_url, $embed_matches ) ) {
-			$video_id = $embed_matches[1];
-		} elseif ( preg_match( '/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/', $video_url, $watch_matches ) ) {
-			$video_id = $watch_matches[1];
-		} elseif ( preg_match( '/youtu\.be\/([a-zA-Z0-9_-]+)/', $video_url, $short_matches ) ) {
-			$video_id = $short_matches[1];
-		}
+	// Determine the effective grid intensity for this request
+	if ( isset( $GLOBALS['grid_aware_wp_effective_intensity'] ) ) {
+		$effective_intensity = $GLOBALS['grid_aware_wp_effective_intensity'];
+	} else {
+		$effective_intensity = 'live';
 	}
-
-	// If it's not a YouTube embed, return original content
-	if ( ! $is_youtube ) {
-		return $block_content;
-	}
-
-	// Get current grid intensity from URL
-	$grid_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
 
 	// Debug: Log the grid intensity and block content before processing
 	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( 'Grid Aware WP - Current grid intensity for YouTube: ' . $grid_intensity );
+		error_log( 'Grid Aware WP - Current grid intensity for YouTube: ' . $effective_intensity );
 		error_log( 'Grid Aware WP - YouTube block content before processing: ' . $block_content );
 	}
 
 	// If grid intensity is high, don't display the video
-	if ( 'high' === $grid_intensity ) {
+	if ( 'high' === $effective_intensity ) {
 		// Extract dimensions from the iframe
 		$video_width = '';
 		$video_height = '';
@@ -1139,7 +1149,7 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 	}
 
 	// For medium intensity, show YouTube thumbnail instead of iframe
-	if ( 'medium' === $grid_intensity ) {
+	if ( 'medium' === $effective_intensity ) {
 		// If we have a video ID, show the thumbnail
 		if ( ! empty( $video_id ) ) {
 			// Extract dimensions from the iframe
@@ -1229,12 +1239,12 @@ function grid_aware_wp_filter_youtube_embed_block( $block_content, $block ) {
 	}
 
 	// For low intensity, return the original embed code without any modification
-	if ( 'low' === $grid_intensity ) {
+	if ( 'low' === $effective_intensity ) {
 		return $block_content;
 	}
 
 	// For live intensity (default), convert to nocookie domain and add lazy loading
-	if ( 'live' === $grid_intensity ) {
+	if ( 'live' === $effective_intensity ) {
 		// Convert to nocookie domain first
 		$block_content = grid_aware_wp_convert_youtube_to_nocookie( $block_content );
 		// Add loading="lazy" to iframe if not already present
@@ -1296,7 +1306,7 @@ function grid_aware_wp_enqueue_frontend_assets() {
 	);
 
 	// Add inline script with settings and initial intensity
-	$initial_intensity = isset( $_GET['grid_intensity'] ) ? sanitize_text_field( $_GET['grid_intensity'] ) : 'live';
+	$initial_intensity = isset( $GLOBALS['grid_aware_wp_effective_intensity'] ) ? $GLOBALS['grid_aware_wp_effective_intensity'] : 'low';
 	wp_add_inline_script(
 		'grid-aware-wp-frontend',
 		sprintf(

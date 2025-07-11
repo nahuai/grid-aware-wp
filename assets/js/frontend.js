@@ -1,5 +1,10 @@
+// Constants for better maintainability
+const INTENSITY_CLASSES = ['grid-intensity-low', 'grid-intensity-medium', 'grid-intensity-high'];
+const DEFAULT_INTENSITY = 'low';
+const FALLBACK_INTENSITY = 'medium';
+
 document.addEventListener('DOMContentLoaded', function() {
-	// New: Checkbox-based grid intensity switcher
+	// Checkbox-based grid intensity switcher
 	const toggleGroup = document.querySelector('.grid-intensity-toggle-group');
 	if (toggleGroup) {
 		toggleGroup.addEventListener('click', function(e) {
@@ -10,9 +15,9 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (!input) return;
 
 			// Only allow one active at a time
-			toggleGroup.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-				cb.checked = false;
-				cb.parentElement.classList.remove('active');
+			toggleGroup.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+				checkbox.checked = false;
+				checkbox.parentElement.classList.remove('active');
 			});
 			input.checked = true;
 			label.classList.add('active');
@@ -24,20 +29,11 @@ document.addEventListener('DOMContentLoaded', function() {
 		});
 	}
 
-	// Tooltip logic (unchanged)
-	const tooltip = document.getElementById('tooltip');
-	if (tooltip) {
-		tooltip.addEventListener('click', function() {
-			const isExpanded = this.getAttribute('aria-expanded') === 'true';
-			this.setAttribute('aria-expanded', !isExpanded);
-		});
-	}
-
 	// Default to 'low' if grid_intensity is not set or is 'live'
 	const urlParams = new URLSearchParams(window.location.search);
 	let intensity = urlParams.get('grid_intensity');
 	if (!intensity || intensity === 'live') {
-		intensity = window.gridAwareWPLiveIntensity || 'low';
+		intensity = window.gridAwareWPLiveIntensity || DEFAULT_INTENSITY;
 		urlParams.set('grid_intensity', intensity);
 		window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
 	}
@@ -65,11 +61,9 @@ async function fetchLiveIntensity() {
 		
 		return data;
 	} catch (error) {
-		console.error('Grid Aware WP Error:', error.message);
-		
 		// Fallback to medium intensity if API fails
-		updatePageWithIntensity('medium', {
-			intensity_level: 'medium',
+		updatePageWithIntensity(FALLBACK_INTENSITY, {
+			intensity_level: FALLBACK_INTENSITY,
 			carbonIntensity: 300,
 			zone: 'unknown (fallback)',
 			timestamp: new Date().toISOString(),
@@ -85,7 +79,7 @@ async function fetchLiveIntensity() {
  */
 function updatePageWithIntensity(intensityLevel, data) {
 	// Remove existing intensity classes
-	document.body.classList.remove('grid-intensity-low', 'grid-intensity-medium', 'grid-intensity-high');
+	document.body.classList.remove(...INTENSITY_CLASSES);
 	
 	// Add new intensity class
 	document.body.classList.add('grid-intensity-' + intensityLevel);

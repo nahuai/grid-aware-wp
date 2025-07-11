@@ -1,101 +1,156 @@
-/* Switcher Container */
-.carbon-switcher-wrapper {
-	view-transition-name: intensity-switcher;
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	z-index: 999999;
-	background: #fff;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	padding: 0.5rem 1rem;
+/* ==========================================================================
+   Grid Aware WordPress Frontend Styles
+   ========================================================================== */
+
+   :root {
+	/* Info Bar Background Colors */
+	--info-bar-bg-low: #ECF3DC;
+	--info-bar-bg-medium: #DBD6C0;
+	--info-bar-bg-high: #D3D3D3;
+
+	/* Toggle Button Active Colors */
+	--toggle-active-low: #364D00;    
+	--toggle-active-medium: #3D2E13;
+	--toggle-active-high: #161616;
+
+	/* Image Placeholder Colors */
+	--placeholder-bg: #D2D2D2;   
+	--placeholder-border: #e3e3e3;
+
+    --color-white: #fff;
+    --color-black: #222;
+}
+
+/* ==========================================================================
+   Grid Info Bar
+   ========================================================================== */
+
+.grid-intensity-info-bar {
 	display: flex;
-	justify-content: center;
+	justify-content: space-between;
 	align-items: center;
-	transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.carbon-switcher {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+	background-color: var(--info-bar-bg-low);
+	padding: 1.125rem 2rem 1.125rem 1.5rem;
 	font-family: inherit;
-    font-size: 1.25rem;
-    color: #1e1e1e;
+	font-size: 1rem;
+	z-index: 1001;
 }
 
-/* Tooltip */
-.tooltip {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: 50%;
-    background: #f0f0f0;
-    color: #1e1e1e;
-    cursor: pointer;
-    font-size: 0.75rem;
-    margin-right: 0.25rem;
-    transition: background-color 0.2s ease;
+.grid-intensity-medium .grid-intensity-info-bar {
+    background-color: var(--info-bar-bg-medium);
 }
 
-.tooltip:hover {
-    background: #e0e0e0;
+.grid-intensity-high .grid-intensity-info-bar {
+    background-color: var(--info-bar-bg-high);
 }
 
-.tooltip[aria-expanded="true"]::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #1e1e1e;
-    color: #fff;
-    padding: 0.5rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    z-index: 1000000;
+.grid-info-left {
+	display: flex;
+	align-items: center;
+	gap: 0.7rem;
 }
 
-/* Grid Intensity Select */
-.grid-intensity-select {
-    appearance: none;
-    background: none;
-    border: none;
-    padding: 0;
-    font-size: inherit;
-    font-family: inherit;
-    color: inherit;
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-    text-decoration-thickness: 1px;
-    text-decoration-color: currentColor;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
+.grid-info-title {
+	margin-right: 0.5rem;
 }
 
-.grid-intensity-select:hover {
-    opacity: 1;
+.grid-info-country {
+	padding: 0.125rem 0.5rem;
+	font-weight: 700;
 }
 
-.grid-intensity-select:focus {
-    outline: none;
+.grid-info-intensity-label {
+	font-weight: 700;
 }
 
-/* Image Placeholder */
+.grid-info-carbon {
+	padding: 0.125rem 0.5rem;
+}
+
+.grid-info-right {
+	display: flex;
+	align-items: center;
+	gap: 1.2rem;
+}
+
+/* ==========================================================================
+   Toggle Controls
+   ========================================================================== */
+
+.grid-intensity-toggle-group {
+	display: flex;
+	gap: 1.5rem;
+	align-items: center;
+}
+
+.grid-intensity-toggle {
+	position: relative;
+	display: flex;
+	align-items: center;
+	font-family: inherit;
+	font-weight: 500;
+	cursor: pointer;
+	padding: 0.25rem 0.75rem;
+	border-radius: 6px;
+	transition: background 0.2s, color 0.2s;
+	color: inherit;
+	user-select: none;
+}
+
+.grid-intensity-toggle input[type="checkbox"] {
+	display: none;
+}
+
+.grid-intensity-toggle span {
+	font-family: inherit;
+	font-size: inherit;
+	color: inherit;
+}
+
+/* Active state */
+.grid-intensity-toggle.active:has(input[value="low"]),
+.grid-intensity-toggle input[value="low"]:checked + span {
+    background: var(--toggle-active-low);
+    color: var(--color-white);
+}
+.grid-intensity-toggle.active:has(input[value="medium"]),
+.grid-intensity-toggle input[value="medium"]:checked + span {
+    background: var(--toggle-active-medium);
+    color: var(--color-white);
+}
+.grid-intensity-toggle.active:has(input[value="high"]),
+.grid-intensity-toggle input[value="high"]:checked + span {
+    background: var(--toggle-active-high);
+    color: var(--color-white);
+}
+
+/* Hover state - apply to label, not span */
+.grid-intensity-toggle:has(input[value="low"]:hover),
+.grid-intensity-toggle:hover:has(input[value="low"]) {
+    background: var(--toggle-active-low);
+    color: var(--color-white);
+}
+.grid-intensity-toggle:has(input[value="medium"]:hover),
+.grid-intensity-toggle:hover:has(input[value="medium"]) {
+    background: var(--toggle-active-medium);
+    color: var(--color-white);
+}
+.grid-intensity-toggle:has(input[value="high"]:hover),
+.grid-intensity-toggle:hover:has(input[value="high"]) {
+    background: var(--toggle-active-high);
+    color: var(--color-white);
+}
+
+/* ==========================================================================
+   Image Placeholders
+   ========================================================================== */
+
 .grid-aware-image-placeholder {
-    view-transition-name: image;
-    background: #D2D2D2;
-    border: 20px solid #e3e3e3;
+    background: var(--placeholder-bg);  
+    border: 20px solid var(--placeholder-border);
     padding: 2.5rem 1.5rem;
     text-align: center;
     font-size: 1rem;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-origin: center;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -117,51 +172,35 @@
 }
 
 .placeholder-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 18px;
-    font-size: 48px;
-    color: #bbb;
+    margin-bottom: 1.125rem;
 }
 
 .placeholder-alt {
-    color: #222;
-    margin-bottom: 0.1em;
     font-size: 1.2em;
 	font-style: italic;
 }
 
-.placeholder-caption {
-    font-style: italic;
-    color: #666;
-    margin-bottom: 0.2em;
-    font-size: 0.98em;
-}
-
 .placeholder-description {
     text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 1rem;
     font-size: 1rem;
 }
-.placeholder-description strong {
-    font-weight: bold;
-    color: #222;
-    font-style: normal;
+
+.placeholder-load-btn {
+    padding: 0.625rem 1.5rem;
+    background: #444;
+    color: #fff;
+    border: none;
+    border-radius: 100px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-family: inherit;
+    margin-top: 0.5rem;
 }
 
-.placeholder-message {
-    margin-top: 0.5rem;
-    font-size: 13px;
-    color: #6c757d;
-}
-
-.placeholder-click-hint {
-    margin-top: 0.5rem;
-    font-size: 12px;
-    color: #007bff;
-    font-weight: 500;
-    text-decoration: underline;
+.placeholder-load-btn:hover,
+.placeholder-load-btn:focus {
+    background: #222;
 }
 
 /* Loaded image state */
@@ -175,55 +214,84 @@
 	transform: none;
 }
 
-/* Blurred Image Container */
-.grid-aware-image-blurred {
-	position: relative;
-	cursor: pointer;
-	transition: all 0.3s ease;
+/* Medium overlay for hover effects */
+.medium-overlay-always {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1em;
+    background: rgba(0,0,0,0.35);
+    z-index: 2;
+    text-align: center;
+    pointer-events: none;
+    padding: 3.75rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-.grid-aware-image-blurred .blur-overlay {
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background: rgba(0, 0, 0, 0.3);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	opacity: 0;
-	transition: opacity 0.3s ease;
-	border-radius: 4px;
+/* Show overlay on hover of the parent container */
+.grid-aware-image-blurred:hover .medium-overlay-always,
+.grid-aware-video-thumbnail:hover .medium-overlay-always {
+    opacity: 1;
 }
 
-.grid-aware-image-blurred:hover .blur-overlay {
-	opacity: 1;
+.grid-aware-image-blurred:hover,
+.grid-aware-video-thumbnail:hover {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
 }
 
-.grid-aware-image-blurred .blur-message {
-	color: white;
-	background: rgba(0, 0, 0, 0.8);
-	padding: 0.5rem 1rem;
-	border-radius: 20px;
-	font-size: 14px;
-	font-weight: 500;
-	text-align: center;
-	backdrop-filter: blur(4px);
+.grid-aware-image-blurred,
+.grid-aware-video-thumbnail {
+    transition: transform 0.3s ease;
+    cursor: pointer;
 }
 
-/* Loaded blurred image state */
-.grid-aware-image-blurred.grid-aware-image-loaded {
-	cursor: default;
+.medium-overlay-always .placeholder-alt {
+    color: #fff;
+    font-size: 1.2rem;
+    font-family: Helvetica, Arial, sans-serif;
+    font-style: italic;
 }
 
-.grid-aware-image-blurred.grid-aware-image-loaded:hover {
-	transform: none;
+.medium-overlay-always .placeholder-description {
+    color: #fff;
 }
 
-.grid-aware-image-blurred.grid-aware-image-loaded .blur-overlay {
-	display: none;
+.medium-overlay-always .placeholder-load-btn {
+    background: #49432A;
+    color: #fff;
+    text-transform: uppercase;
+    border-radius: 100px;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0.7em 2em;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    border: none;
+    margin-top: 0.5em;
+    transition: background 0.2s;
+    pointer-events: auto;
 }
+
+.medium-overlay-always .placeholder-load-btn:hover,
+.medium-overlay-always .placeholder-load-btn:focus {
+    background: #222;
+    outline: none;
+}
+
+.grid-intensity-medium .wp-block-image img {
+    filter: blur(1px);
+}
+
+/* ==========================================================================
+   Video Placeholders
+   ========================================================================== */
 
 .grid-aware-video-placeholder {
     display: flex;
@@ -257,16 +325,8 @@
 
 .grid-aware-video-placeholder .placeholder-message {
     margin-top: 0.5rem;
-    font-size: 13px;
+    font-size: 0.8125rem;
     color: #6c757d;
-}
-
-.grid-aware-video-placeholder .placeholder-click-hint {
-    margin-top: 0.5rem;
-    font-size: 12px;
-    color: #007bff;
-    font-weight: 500;
-    text-decoration: underline;
 }
 
 /* Loaded video state */
@@ -297,7 +357,6 @@
 	box-sizing: border-box;
 }
 
-
 .grid-aware-video-thumbnail img {
 	width: 100%;
 	height: 100%;
@@ -324,26 +383,8 @@
 	opacity: 1;
 }
 
-.grid-aware-video-thumbnail .play-button {
-	width: 60px;
-	height: 60px;
-	background: rgba(255, 0, 0, 0.9);
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: white;
-	font-size: 24px;
-	margin-bottom: 1rem;
-	transition: background-color 0.3s ease;
-}
-
-.grid-aware-video-thumbnail:hover .play-button {
-	background: rgba(255, 0, 0, 1);
-}
-
 .grid-aware-video-thumbnail .thumbnail-title {
-	color: white;
+	color: var(--color-white);
 	font-weight: 500;
 	font-size: 1.2rem;
 	text-align: center;
@@ -374,451 +415,9 @@
     background: rgba(0,0,0,0.8);
 }
 
-/* Intensity States */
-[data-grid-intensity="high"] .secondary-nav {
-	background: #f8f9fa;
-	transform: scale(1.02);
-}
-
-[data-grid-intensity="medium"] .secondary-nav {
-	background: #fff;
-	transform: scale(1);
-}
-
-[data-grid-intensity="low"] .secondary-nav {
-	background: #fff;
-	transform: scale(0.98);
-}
-
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-	.secondary-nav {
-		padding: 0.5rem;
-	}
-
-	.carbon-switcher {
-		gap: 0.5rem;
-	}
-
-	.hide-on-mobile {
-		display: none;
-	}
-}
-
-/* View Transitions */
-@keyframes fade-in {
-	from { 
-		opacity: 0;
-		transform: scale(0.8);
-	}
-}
-
-@keyframes fade-out {
-	to { 
-		opacity: 0;
-		transform: scale(1.2);
-	}
-}
-
-@keyframes slide-from-right {
-	from { 
-		transform: translateX(100px) scale(0.8);
-		opacity: 0;
-	}
-}
-
-@keyframes slide-to-left {
-	to { 
-		transform: translateX(-100px) scale(1.2);
-		opacity: 0;
-	}
-}
-
-/* View Transition Elements */
-::view-transition-old(intensity-switcher) {
-	animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) both fade-out;
-}
-
-::view-transition-new(intensity-switcher) {
-	animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both fade-in;
-}
-
-::view-transition-old(image) {
-	animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
-}
-
-::view-transition-new(image) {
-	animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both slide-from-right;
-}
-
-::view-transition-old(video) {
-	animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
-}
-
-::view-transition-new(video) {
-	animation: 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both slide-from-right;
-}
-
-/* View Transition Fallback */
-@supports not (view-transition-name: none) {
-	.carbon-switcher-wrapper,
-	.grid-aware-image-placeholder {
-		transition: all 0.3s ease;
-	}
-}
-
-/* New grid info bar styles */
-.grid-intensity-info-bar {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	background-color: #ECF3DC;
-	box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-	padding: 18px 32px 18px 24px;
-	font-family: inherit;
-	font-size: 1rem;
-	color: #222;
-	position: sticky;
-	top: 0;
-	z-index: 1001;
-	backdrop-filter: blur(8px);
-	-webkit-backdrop-filter: blur(8px);
-}
-
-.grid-intensity-medium .grid-intensity-info-bar {
-    background-color: #DBD6C0;
-}
-
-.grid-intensity-high .grid-intensity-info-bar {
-    background-color: #D3D3D3;
-}
-
-.grid-info-left {
-	display: flex;
-	align-items: center;
-	gap: 0.7rem;
-}
-.grid-info-title {
-	margin-right: 0.5rem;
-}
-.grid-info-icon {
-	display: inline-block;
-	font-size: 1.1em;
-	margin-left: 0.2em;
-	color: #888;
-	vertical-align: middle;
-	cursor: pointer;
-	border-radius: 50%;
-	transition: background 0.2s;
-	padding: 0 0.2em;
-}
-.grid-info-icon:focus, .grid-info-icon:hover {
-	background: #e5e7eb;
-	outline: none;
-}
-
-.grid-info-country {
-	border-radius: 4px;
-	padding: 2px 8px;
-	font-weight: 600;
-	font-size: 1em;
-	letter-spacing: 0.04em;
-}
-.grid-info-intensity-label {
-	font-weight: 700;
-	font-size: 1em;
-	letter-spacing: 0.03em;
-}
-.grid-info-carbon {
-	border-radius: 4px;
-	padding: 2px 8px;
-	font-size: 0.98em;
-	margin-left: 0.2em;
-	color: #444;
-}
-.grid-info-right {
-	display: flex;
-	align-items: center;
-	gap: 1.2rem;
-}
-.grid-design-title {
-	margin-right: 0.5rem;
-}
-.grid-intensity-toggle-bar {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-.carbon-switcher-wrapper.in-bar {
-	position: static;
-	box-shadow: none;
-	background: none;
-	padding: 0;
-	margin: 0;
-}
-/* Remove old floating style */
-.grid-intensity-info {
-	display: none !important;
-}
-@media (max-width: 900px) {
-	.grid-intensity-info-bar {
-		flex-direction: column;
-		align-items: stretch;
-		padding: 12px 8px;
-		gap: 0.7rem;
-	}
-	.grid-info-left, .grid-info-right {
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-}
-
-.grid-aware-video-loaded,
-.grid-aware-video-placeholder {
-    width: 100% !important;
-	aspect-ratio: 16/9 !important;
-}
-
-.grid-intensity-medium .wp-block-image img {
-    filter: blur(1px);
-}
-
-/* Grid Intensity Toggle Group */
-.grid-intensity-toggle-group {
-	display: flex;
-	gap: 1.5rem;
-	align-items: center;
-}
-
-.grid-intensity-toggle {
-	position: relative;
-	display: flex;
-	align-items: center;
-	font-family: inherit;
-	font-size: 1.1rem;
-	font-weight: 500;
-	cursor: pointer;
-	padding: 0.25rem 0.75rem;
-	border-radius: 6px;
-	transition: background 0.2s, color 0.2s;
-	color: inherit;
-	user-select: none;
-}
-
-.grid-intensity-toggle input[type="checkbox"] {
-	display: none;
-}
-
-.grid-intensity-toggle span {
-	font-family: inherit;
-	font-size: inherit;
-	color: inherit;
-	letter-spacing: 0.02em;
-}
-
-.grid-intensity-toggle.active,
-.grid-intensity-toggle input[type="checkbox"]:checked + span {
-	background: #364D00;
-	color: #fff;
-	box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-}
-
-.grid-intensity-toggle:not(.active):hover {
-	background: #364D00;
-	color: #fff;
-}
-
-.grid-intensity-medium .grid-intensity-toggle.active,
-.grid-intensity-medium .grid-intensity-toggle input[type="checkbox"]:checked + span {
-	background: #3D2E13;
-}
-
-.grid-intensity-medium .grid-intensity-toggle:not(.active):hover {
-	background: #3D2E13;
-}
-
-.grid-intensity-high .grid-intensity-toggle.active,
-.grid-intensity-high .grid-intensity-toggle input[type="checkbox"]:checked + span {
-	background: #161616;
-}
-
-.grid-intensity-high .grid-intensity-toggle:not(.active):hover {
-	background: #161616;
-}
-
-/* New high intensity image placeholder styles */
-.placeholder-load-btn {
-    padding: 10px 24px;
-    background: #444;
-    color: #fff;
-    border: none;
-    border-radius: 100px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-family: inherit;
-    transition: background 0.2s;
-    margin-top: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-.placeholder-load-btn:hover,
-.placeholder-load-btn:focus {
-    background: #222;
-    outline: none;
-}
-
-.grid-aware-image-moderate {
-    position: relative;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    border: 20px solid #e3e3e3;
-    border-radius: 16px;
-    min-height: 260px;
-    width: var(--image-width, 100%);
-    aspect-ratio: var(--aspect-ratio, auto);
-    max-width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-family: Helvetica, Arial, sans-serif !important;
-    overflow: hidden;
-}
-.grid-aware-image-moderate::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background: inherit;
-    filter: blur(8px) brightness(0.7);
-    pointer-events: none;
-}
-.moderate-overlay-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    max-width: 90%;
-    color: #fff;
-    text-align: center;
-    gap: 1.2em;
-}
-.moderate-overlay-content .placeholder-alt {
-    color: #fff;
-    font-size: 1.3em;
-    font-weight: 600;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.25);
-}
-.moderate-overlay-content .placeholder-description {
-    color: #fff;
-    font-size: 1em;
-    font-weight: 400;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.25);
-    margin-bottom: 0.5em;
-}
-.moderate-overlay-content .placeholder-description strong {
-    font-weight: bold;
-    color: #fff;
-}
-.moderate-overlay-content .placeholder-load-btn {
-    background: rgba(0,0,0,0.85);
-    color: #fff;
-    border-radius: 100px;
-    font-size: 1em;
-    padding: 0.7em 2em;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    border: none;
-    margin-top: 0.5em;
-    transition: background 0.2s;
-}
-.moderate-overlay-content .placeholder-load-btn:hover,
-.moderate-overlay-content .placeholder-load-btn:focus {
-    background: #222;
-    outline: none;
-}
-
-.medium-overlay-always {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1em;
-    background: rgba(0,0,0,0.35);
-    z-index: 2;
-    text-align: center;
-    pointer-events: none;
-    padding: 60px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-/* Show overlay on hover of the parent container */
-.grid-aware-image-blurred:hover .medium-overlay-always,
-.grid-aware-video-thumbnail:hover .medium-overlay-always {
-    opacity: 1;
-}
-
-/* Add subtle hover effects to parent containers */
-.grid-aware-image-blurred:hover,
-.grid-aware-video-thumbnail:hover {
-    transform: scale(1.02);
-    transition: transform 0.3s ease;
-}
-
-.grid-aware-image-blurred,
-.grid-aware-video-thumbnail {
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-
-.medium-overlay-always .placeholder-alt,
-.medium-overlay-always .placeholder-description,
-.medium-overlay-always .placeholder-load-btn {
-    pointer-events: auto;
-}
-.medium-overlay-always .placeholder-alt {
-    color: #fff;
-    font-size: 1.2rem;
-    font-family: Helvetica, Arial, sans-serif;
-    font-style: italic;
-}
-.medium-overlay-always .placeholder-description {
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 400;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.25);
-}
-.medium-overlay-always .placeholder-description strong {
-    font-weight: bold;
-    color: #fff;
-}
-.medium-overlay-always .placeholder-load-btn {
-    background: #49432A;
-    color: #fff;
-    text-transform: uppercase;
-    border-radius: 100px;
-    font-size: 1rem;
-    font-weight: 500;
-    padding: 0.7em 2em;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    border: none;
-    margin-top: 0.5em;
-    transition: background 0.2s;
-    pointer-events: auto;
-}
-.medium-overlay-always .placeholder-load-btn:hover,
-.medium-overlay-always .placeholder-load-btn:focus {
-    background: #222;
-    outline: none;
-}
+/* ==========================================================================
+   Tooltips
+   ========================================================================== */
 
 .info-tooltip {
   display: inline-flex;
@@ -827,8 +426,8 @@
   height: 1.35em;
   font-size: 1.1em;
   font-family: inherit;
-  background: #222;
-  color: #fff;
+  background: var(--color-black);
+  color: var(--color-white);
   border-radius: 50%;
   margin-left: 0.4em;
   cursor: pointer;
@@ -846,10 +445,10 @@
     pointer-events: none;
     position: absolute;
     left: 50%;
-    top: calc(100% + 8px);
+    top: calc(100% + 0.5rem);
     transform: translateX(-50%);
-    background: #222;
-    color: #fff;
+    background: var(--color-black);   
+    color: var(--color-white);
     padding: 0.5em 1em;
     border-radius: 6px;
     font-size: 0.8rem;

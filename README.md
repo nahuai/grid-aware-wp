@@ -16,6 +16,7 @@ The plugin's main objective is to provide awareness through a tool that informs 
 
 When the grid intensity is medium or high (meaning more fossil-fuel-based energy is being used), it automatically adapts the most demanding elements in terms of consumption — in this case, images, videos, and fonts — and includes additional information so that the user can decide whether to load these elements individually.
 
+You can see the plugin in action in the [example page created on Sustain WP](https://sustainwp.com/grid-aware-wordpress/).
 
 ## Features
 

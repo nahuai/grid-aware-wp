@@ -122,7 +122,7 @@ class Grid_Aware_WP_Server {
 		}
 		if ( 'medium' === $effective_intensity ) {
 			$overlay_html = sprintf(
-				'<div class="medium-overlay-always">
+				'<div class="medium-overlay">
 					%s
 					<div class="placeholder-description">%s <strong>%s</strong></div>
 					<button class="placeholder-load-btn" type="button">%s</button>
@@ -252,7 +252,7 @@ class Grid_Aware_WP_Server {
 					return sprintf(
 						'<div class="grid-aware-video-thumbnail" data-original-video="%s" onclick="gridAwareWPLoadVideo(this)"%s>
 							<img src="%s" alt="%s" loading="lazy" />
-							<div class="medium-overlay-always">
+							<div class="medium-overlay">
 								%s
 								<div class="placeholder-description">%s <strong>%s</strong></div>
 								<button class="placeholder-load-btn" type="button">%s</button>
@@ -271,7 +271,7 @@ class Grid_Aware_WP_Server {
 				return sprintf(
 					'<div class="grid-aware-video-thumbnail" data-original-video="%s" onclick="gridAwareWPLoadVideo(this)"%s>
 						<img src="%s" alt="%s" loading="lazy" />
-						<div class="medium-overlay-always">
+						<div class="medium-overlay">
 							%s
 							<div class="placeholder-description">%s <strong>%s</strong></div>
 							<button class="placeholder-load-btn" type="button">%s</button>
@@ -413,4 +413,3 @@ function grid_aware_wp_apply_theme_json_filters() {
 	add_filter( 'wp_theme_json_data_global', 'grid_aware_wp_filter_theme_json_fonts' );
 }
 add_action( 'after_setup_theme', 'grid_aware_wp_apply_theme_json_filters' );
-

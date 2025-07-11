@@ -147,6 +147,7 @@
 
 .grid-aware-image-placeholder {
     background: var(--placeholder-bg);  
+    color: var(--color-black);
     border: 20px solid var(--placeholder-border);
     padding: 2.5rem 1.5rem;
     text-align: center;
@@ -215,7 +216,7 @@
 }
 
 /* Medium overlay for hover effects */
-.medium-overlay-always {
+.medium-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -226,7 +227,7 @@
     align-items: center;
     justify-content: center;
     gap: 1em;
-    background: rgba(0,0,0,0.35);
+    background: rgba(0,0,0,0.65);
     z-index: 2;
     text-align: center;
     pointer-events: none;
@@ -236,8 +237,8 @@
 }
 
 /* Show overlay on hover of the parent container */
-.grid-aware-image-blurred:hover .medium-overlay-always,
-.grid-aware-video-thumbnail:hover .medium-overlay-always {
+.grid-aware-image-blurred:hover .medium-overlay,
+.grid-aware-video-thumbnail:hover .medium-overlay {
     opacity: 1;
 }
 
@@ -253,18 +254,18 @@
     cursor: pointer;
 }
 
-.medium-overlay-always .placeholder-alt {
+.medium-overlay .placeholder-alt {
     color: #fff;
     font-size: 1.2rem;
     font-family: Helvetica, Arial, sans-serif;
     font-style: italic;
 }
 
-.medium-overlay-always .placeholder-description {
+.medium-overlay .placeholder-description {
     color: #fff;
 }
 
-.medium-overlay-always .placeholder-load-btn {
+.medium-overlay .placeholder-load-btn {
     background: #49432A;
     color: #fff;
     text-transform: uppercase;
@@ -279,8 +280,8 @@
     pointer-events: auto;
 }
 
-.medium-overlay-always .placeholder-load-btn:hover,
-.medium-overlay-always .placeholder-load-btn:focus {
+.medium-overlay .placeholder-load-btn:hover,
+.medium-overlay .placeholder-load-btn:focus {
     background: #222;
     outline: none;
 }
@@ -298,8 +299,8 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    background: #D2D2D2;
-    border: 20px solid #e3e3e3;
+    background: var(--placeholder-bg);
+    border: 20px solid var(--placeholder-border);
     min-height: 260px;
     box-sizing: border-box;
     aspect-ratio: 16/9 !important;
@@ -319,14 +320,14 @@
 
 .grid-aware-video-placeholder .placeholder-title {
     font-weight: 500;
-    color: #495057;
+    color: var(--color-black);
     margin-bottom: 0.5rem;
 }
 
 .grid-aware-video-placeholder .placeholder-message {
     margin-top: 0.5rem;
     font-size: 0.8125rem;
-    color: #6c757d;
+    color: var(--color-black);
 }
 
 /* Loaded video state */
@@ -335,8 +336,8 @@
 }
 
 .grid-aware-video-loaded:hover {
-    background: #f8f9fa;
-    border-color: #dee2e6;
+    background: var(--placeholder-bg);
+    border-color: var(--placeholder-border);
     transform: none;
 }
 
@@ -407,11 +408,11 @@
 }
 
 .grid-aware-video-thumbnail.grid-aware-video-loaded:hover {
-	border-color: #dee2e6;
+	border-color: var(--placeholder-border);
 	transform: none;
 }
 
-.grid-aware-video-thumbnail .medium-overlay-always {
+.grid-aware-video-thumbnail .medium-overlay {
     background: rgba(0,0,0,0.8);
 }
 

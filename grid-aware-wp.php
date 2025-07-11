@@ -3,7 +3,7 @@
  * Plugin Name: Grid Aware WordPress
  * Plugin URI: https://github.com/nahuai/grid-aware-wp
  * Description: A plugin that helps manage and optimize grid-based content in WordPress.
- * Version: 1.0.1
+ * Version: 0.9.0
  * Author: Nahuai
  * Author URI: https://github.com/nahuai
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Define plugin constants
-define( 'GRID_AWARE_WP_VERSION', '1.0.0' );
+define( 'GRID_AWARE_WP_VERSION', '0.9.0' );
 define( 'GRID_AWARE_WP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GRID_AWARE_WP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

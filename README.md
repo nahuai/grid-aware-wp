@@ -33,9 +33,6 @@ The plugin works on two fronts:
 - **Automatic Geolocation**: Detects visitor location and fetches corresponding grid data
 - **Dynamic Content Optimization**: Adjusts images, videos, and typography based on grid intensity
 - **Live Preview**: Test different intensity levels in the WordPress editor
-- Grid-aware image handling
-- Grid-aware video handling
-- Grid-aware typography handling
 
 ## Current Limitations
 
@@ -128,7 +125,26 @@ The information bar has a standardized appearance, regardless of the website on 
 
 ## How to Use It
 
-For proper testing, it's better if you use a block theme (like Twenty Twenty-Five) and create a page with images and Youtube embeds. For further testing, you'll need an Electricity Maps API key and a VPN to emulate visits from different zones (countries).
+### For Testing and Development
+
+**Recommended Setup:**
+- Use a block theme (like Twenty Twenty-Five) for full functionality
+- Create test pages with images and YouTube embeds
+- Get an Electricity Maps API key for live data
+- Use a VPN to test different geographic zones
+
+**Testing Scenarios:**
+- Test all three intensity levels (Low/Medium/High)
+- Verify image and video placeholders work correctly
+- Check typography changes on block themes
+- Verify API fallback behavior when grid data is unavailable
+
+**Development Notes:**
+- The plugin uses render_block filters for content modification
+- Works best with block editor content
+- Typography changes only apply to block themes
+- API responses are cached to reduce calls
+- Graceful degradation when API is unavailable
 
 ## API Endpoints
 

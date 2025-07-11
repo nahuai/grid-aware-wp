@@ -21,9 +21,9 @@ class Grid_Aware_WP_Electricity_Maps_API {
 	const API_BASE_URL = 'https://api.electricitymap.org/v3';
 
 	/**
-	 * Cache duration in seconds (5 minutes)
+	 * Cache duration in seconds (10 minutes)
 	 */
-	const CACHE_DURATION = 300;
+	const CACHE_DURATION = 600;
 
 	/**
 	 * Get carbon intensity for a specific zone

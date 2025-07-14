@@ -4,8 +4,9 @@
  * Plugin URI: https://github.com/nahuai/grid-aware-wp
  * Description: A plugin that helps manage and optimize grid-based content in WordPress.
  * Version: 0.9.0
- * Author: Nahuai
- * Author URI: https://github.com/nahuai
+ * Author: Nahuai Badiola
+ * Author URI: https://nbadiola.com
+ * Plugin URI: https://github.com/nahuai/grid-aware-wp
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: grid-aware-wp
@@ -235,7 +236,7 @@ function grid_aware_wp_register_lite_youtube_assets() {
 add_action( 'init', 'grid_aware_wp_register_lite_youtube_assets' );
 
 /**
- * Add CSS to force Helvetica when grid intensity is high and override image blur when images are disabled
+ * Add custom CSS when grid intensity is high
  */
 function grid_aware_wp_add_high_intensity_css() {
 	// Only add on frontend
@@ -268,20 +269,6 @@ function grid_aware_wp_add_high_intensity_css() {
 	$settings = ! empty( $page_options ) ? $page_options : $global_options;
 
 	$css = '';
-
-	// If typography is enabled and grid intensity is high, add CSS to force Helvetica
-	if ( isset( $settings['typography'] ) && '1' === $settings['typography'] && 'high' === $effective_intensity ) {
-		$css .= '
-		body, 
-		body *,
-		.wp-block,
-		.wp-block *,
-		.editor-styles-wrapper,
-		.editor-styles-wrapper * {
-			font-family: Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif !important;
-		}
-		';
-	}
 
 	// If images are disabled, override the blur filter for medium intensity
 	if ( ! isset( $settings['images'] ) || '0' === $settings['images'] ) {

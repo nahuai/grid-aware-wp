@@ -394,6 +394,11 @@ function grid_aware_wp_filter_theme_json_fonts( $theme_json ) {
 					),
 				),
 			),
+			'styles' => array(
+				'typography' => array(
+					'fontFamily' => 'var:preset|font-family|system',
+				),
+			),
 		);
 
 		// Update the theme.json data with our system font configuration

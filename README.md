@@ -160,7 +160,7 @@ The plugin provides several REST API endpoints:
 
 The plugin supports all zones that Electricity Maps (EM) provides data for. This includes major electricity grid zones across Europe, North America, Asia-Pacific, South America, and other regions. The exact list of supported zones depends on the current EM API coverage and may change over time as new zones are added to their service.
 
-## Next Planned Features
+## Next Planned Steps
 
 * Use [the web component created by the GWF](https://github.com/thegreenwebfoundation/gaw-web-component) for the frontend top bar.
 * Provide a UI to customize colors and typography of the frontend top bar.
@@ -168,7 +168,7 @@ The plugin supports all zones that Electricity Maps (EM) provides data for. This
 * Improve caching (with transients). This has not yet be implemented to facilitate the plugin testing.
 * Add a documentation tab with documentation and screenshots.
 * Apply server-side changes to feature image block. First solve how to display correctly the placeholder on small images.
-* Optimize CSS from frontend.css
+* Optimize CSS from frontend.css (reduce and load it conditionally).
 * Improve placeholders for images on medium intensity.
 * Explore ways to modify typography on more themes, safely.
 * Explore ways to modify images and embeds on classic the classic editor on a safe way.
@@ -210,7 +210,7 @@ This plugin is licensed under the GPL v2 or later.
 
 ## Author
 
-[Nahuai](https://github.com/nahuai)
+[Nahuai Badiola](https://profiles.wordpress.org/nahuai/)
 
 ## Contributing
 

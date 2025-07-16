@@ -1,5 +1,5 @@
 > [!WARNING]
-> This is an experimental plugin in alpha stage in active development. It is currently not suitable for production use.
+> This is an experimental plugin in alpha stage and active development. It is currently not suitable for production use.
 
 # Grid Aware WordPress
 

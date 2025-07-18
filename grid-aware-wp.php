@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/nahuai/grid-aware-wp
  * Description: A plugin that helps manage and optimize grid-based content in WordPress.
  * Version: 0.9.0
- * Author: Nahuai Badiola
+ * Authors: Nahuai Badiola, Nora Ferreirós
  * Author URI: https://nbadiola.com
  * Plugin URI: https://github.com/nahuai/grid-aware-wp
  * License: GPL v2 or later

@@ -212,6 +212,7 @@ This plugin is licensed under the GPL v2 or later.
 ## Authors
 
 [Nahuai Badiola](https://profiles.wordpress.org/nahuai/) - Development
+
 [Nora Ferreirós](https://profiles.wordpress.org/noradriana/) - UX/UI Design
 
 ## Contributing

@@ -7,7 +7,7 @@ A WordPress plugin that dynamically adjusts your website's content based on the 
 
 ## The Context
 
-This plugin has been created as a consequence of being part of the Green Web Foundation's [Grid-aware websites project](https://www.thegreenwebfoundation.org/news/introducing-our-grid-aware-websites-project/). You can visit the article I wrote together with Nora Ferreirós (who was in charge of the plugin's design) on Branch Magazine to better understand the context, how the plugin works and what it tries to achieve.
+This plugin has been created as a consequence of being part of the Green Web Foundation's [Grid-aware websites project](https://www.thegreenwebfoundation.org/news/introducing-our-grid-aware-websites-project/). You can visit the article we wrote on Branch Magazine to better understand the context, how the plugin works and what it tries to achieve.
 
 ## Description
 
@@ -209,9 +209,10 @@ We welcome feedback on:
 
 This plugin is licensed under the GPL v2 or later.
 
-## Author
+## Authors
 
-[Nahuai Badiola](https://profiles.wordpress.org/nahuai/)
+[Nahuai Badiola](https://profiles.wordpress.org/nahuai/) - Development
+[Nora Ferreirós](https://profiles.wordpress.org/noradriana/) - UX/UI Design
 
 ## Contributing
 

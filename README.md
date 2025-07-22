@@ -1,4 +1,4 @@
-> [!WARNING]
+[> [!WARNING]
 > This is an experimental plugin in alpha stage and active development. It is currently not suitable for production use.
 
 # Grid Aware WordPress
@@ -7,7 +7,7 @@ A WordPress plugin that dynamically adjusts your website's content based on the 
 
 ## The Context
 
-This plugin has been created as a consequence of being part of the Green Web Foundation's [Grid-aware websites project](https://www.thegreenwebfoundation.org/news/introducing-our-grid-aware-websites-project/). You can visit the article we wrote on Branch Magazine to better understand the context, how the plugin works and what it tries to achieve.
+This plugin has been created as a consequence of being part of the Green Web Foundation's [Grid-aware websites project](https://www.thegreenwebfoundation.org/news/introducing-our-grid-aware-websites-project/). You can visit [the article we wrote on Branch Magazine](https://branch.climateaction.tech/issues/issue-9/adapting-wordpress-to-grid-aware-web-experiences/) to better understand the context, how the plugin works and what it tries to achieve.
 
 ## Description
 

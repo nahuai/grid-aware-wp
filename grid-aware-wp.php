@@ -37,7 +37,11 @@ if ( isset( $_GET['grid_intensity'] ) && strtolower( $_GET['grid_intensity'] ) !
 	$GLOBALS['grid_aware_wp_effective_intensity'] = strtolower( sanitize_text_field( $_GET['grid_intensity'] ) );
 } else {
 	$data = Grid_Aware_WP_Electricity_Maps_API::get_current_intensity_level();
-	$GLOBALS['grid_aware_wp_effective_intensity'] = isset( $data['intensity_level'] ) ? strtolower( $data['intensity_level'] ) : 'low';
+	if ( ! is_wp_error( $data ) && isset( $data['intensity_level'] ) ) {
+		$GLOBALS['grid_aware_wp_effective_intensity'] = strtolower( $data['intensity_level'] );
+	} else {
+		$GLOBALS['grid_aware_wp_effective_intensity'] = 'low';
+	}
 }
 
 // Initialize admin functionality

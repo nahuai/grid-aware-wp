@@ -25,116 +25,7 @@ class Grid_Aware_WP_Electricity_Maps_API {
 	 */
 	const CACHE_DURATION = 600;
 
-	/**
-	 * Get carbon intensity for a specific zone
-	 *
-	 * @param string $zone_code The zone code (e.g., 'FR', 'DE', 'US-CA')
-	 * @param string $api_key The API key
-	 * @return array|WP_Error Response data or error
-	 */
-	public static function get_carbon_intensity( $zone_code, $api_key = '' ) {
-		// Get API key from settings if not provided
-		if ( empty( $api_key ) ) {
-			$options = get_option( 'grid_aware_wp_options', array() );
-			$api_key = isset( $options['api_key'] ) ? $options['api_key'] : '';
-		}
 
-		// Trim whitespace from API key
-		$api_key = trim( $api_key );
-
-		if ( empty( $api_key ) ) {
-			return new WP_Error( 'no_api_key', __( 'Electricity Maps API key is required.', 'grid-aware-wp' ) );
-		}
-
-		// Check cache first
-		$cache_key = 'grid_aware_wp_carbon_intensity_' . sanitize_key( $zone_code );
-		$cached_data = get_transient( $cache_key );
-		
-		if ( false !== $cached_data ) {
-			return $cached_data;
-		}
-
-		// Make API request
-		$url = self::API_BASE_URL . '/carbon-intensity/latest';
-		$args = array(
-			'headers' => array(
-				'auth-token' => $api_key,
-			),
-			'timeout' => 10,
-		);
-
-		// Add zone parameter
-		$url = add_query_arg( 'zone', $zone_code, $url );
-
-		$response = wp_remote_get( $url, $args );
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		$response_code = wp_remote_retrieve_response_code( $response );
-		$response_body = wp_remote_retrieve_body( $response );
-
-		if ( 200 !== $response_code ) {
-			$error_data = json_decode( $response_body, true );
-			$api_message = '';
-
-			if ( ! empty( $error_data['message'] ) ) {
-				$api_message = $error_data['message'];
-			} elseif ( ! empty( $error_data['error'] ) ) {
-				$api_message = $error_data['error'];
-			} else {
-				$api_message = wp_remote_retrieve_response_message( $response );
-			}
-
-			$full_error_message = sprintf(
-				// translators: %s: A detailed error message from the API provider.
-				__( 'Electricity Maps API error: %s', 'grid-aware-wp' ),
-				$api_message
-			);
-
-			return new WP_Error(
-				'api_error',
-				$full_error_message,
-				array(
-					'status' => $response_code,
-					'body'   => $response_body,
-				)
-			);
-		}
-
-		$data = json_decode( $response_body, true );
-
-		if ( null === $data ) {
-			return new WP_Error( 'invalid_response', __( 'Invalid response from Electricity Maps API.', 'grid-aware-wp' ) );
-		}
-
-		// Cache the response
-		set_transient( $cache_key, $data, self::CACHE_DURATION );
-
-		return $data;
-	}
-
-	/**
-	 * Get carbon intensity level based on carbon intensity value
-	 *
-	 * @param float $carbon_intensity Carbon intensity in gCO2eq/kWh
-	 * @return string Intensity level: 'low', 'medium', or 'high'
-	 */
-	public static function get_intensity_level( $carbon_intensity ) {
-		// These thresholds are based on typical grid carbon intensities
-		// Low: < 200 gCO2eq/kWh (renewable-heavy grids)
-		// Medium: 200-500 gCO2eq/kWh (mixed grids)
-		// High: > 500 gCO2eq/kWh (fossil-heavy grids)
-		
-		if ( $carbon_intensity < 200 ) {
-			return 'low';
-		} elseif ( $carbon_intensity < 500 ) {
-			return 'medium';
-		} else {
-			return 'high';
-		}
-	}
 
 	/**
 	 * Get visitor's IP address
@@ -179,16 +70,15 @@ class Grid_Aware_WP_Electricity_Maps_API {
 	}
 
 	/**
-	 * Get current carbon intensity level for the visitor.
+	 * Get current carbon intensity level for the visitor using the carbon-intensity-level endpoint.
 	 *
-	 * This function handles the logic for detecting the visitor's location and
-	 * fetching the appropriate carbon intensity data. It uses the recommended
-	 * X-Forwarded-For header for direct geolocation by the Electricity Maps API.
+	 * This function uses the /carbon-intensity-level/latest endpoint which directly returns
+	 * the categorized intensity level without numerical CO2 values.
 	 *
 	 * @param string $api_key Optional API key override.
 	 * @return array|WP_Error Response with intensity level and data.
 	 */
-	public static function get_current_intensity_level( $api_key = '' ) {
+	public static function get_current_intensity_level_direct( $api_key = '' ) {
 		// Get API key from settings if not provided.
 		if ( empty( $api_key ) ) {
 			$options = get_option( 'grid_aware_wp_options', array() );
@@ -202,7 +92,7 @@ class Grid_Aware_WP_Electricity_Maps_API {
 		$visitor_ip = self::get_visitor_ip();
 		$is_local   = self::is_local_ip( $visitor_ip );
 
-		$url       = self::API_BASE_URL . '/carbon-intensity/latest';
+		$url       = self::API_BASE_URL . '/carbon-intensity-level/latest';
 		$cache_key = '';
 		$args      = array(
 			'headers' => array(
@@ -214,89 +104,127 @@ class Grid_Aware_WP_Electricity_Maps_API {
 		if ( $is_local ) {
 			// For local development, use a fallback zone.
 			$url       = add_query_arg( 'zone', 'ES', $url );
-			$cache_key = 'grid_aware_wp_ci_es'; // Static cache key for fallback.
+			$cache_key = 'grid_aware_wp_cil_es'; // Static cache key for fallback.
 		} else {
 			// For public visitors, use IP geolocation via header.
 			$args['headers']['X-Forwarded-For'] = $visitor_ip;
 			// Use a hash of the IP for privacy in the cache key.
-			$cache_key = 'grid_aware_wp_ci_' . md5( $visitor_ip );
+			$cache_key = 'grid_aware_wp_cil_' . md5( $visitor_ip );
 		}
 
 		// Check cache first.
 		$cached_data = get_transient( $cache_key );
 		if ( false !== $cached_data ) {
-			$intensity_data = $cached_data;
-		} else {
-			// Make the API call.
-			$response = wp_remote_get( $url, $args );
+			return $cached_data;
+		}
 
-			if ( is_wp_error( $response ) ) {
-				return $response;
+		// Make the API call.
+		$response = wp_remote_get( $url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+		$response_body = wp_remote_retrieve_body( $response );
+
+		if ( 200 !== $response_code ) {
+			$error_data         = json_decode( $response_body, true );
+			$api_message        = '';
+			$full_error_message = sprintf(
+				__( 'Electricity Maps API error: %s', 'grid-aware-wp' ),
+				wp_remote_retrieve_response_message( $response )
+			);
+
+			if ( ! empty( $error_data['message'] ) ) {
+				$api_message = $error_data['message'];
+			} elseif ( ! empty( $error_data['error'] ) ) {
+				$api_message = $error_data['error'];
 			}
 
-			$response_code = wp_remote_retrieve_response_code( $response );
-			$response_body = wp_remote_retrieve_body( $response );
-
-			if ( 200 !== $response_code ) {
-				$error_data         = json_decode( $response_body, true );
-				$api_message        = '';
+			if ( ! empty( $api_message ) ) {
 				$full_error_message = sprintf(
-					__( 'Electricity Maps API error: %s', 'grid-aware-wp' ),
-					wp_remote_retrieve_response_message( $response )
-				);
-
-				if ( ! empty( $error_data['message'] ) ) {
-					$api_message = $error_data['message'];
-				} elseif ( ! empty( $error_data['error'] ) ) {
-					$api_message = $error_data['error'];
-				}
-
-				if ( ! empty( $api_message ) ) {
-					$full_error_message = sprintf(
-						__( '%1$s error: %2$s', 'grid-aware-wp' ),
-						'Electricity Maps',
-						$api_message
-					);
-				}
-
-				return new WP_Error(
-					'api_error',
-					$full_error_message,
-					array(
-						'status' => $response_code,
-						'body'   => $response_body,
-					)
+					__( '%1$s error: %2$s', 'grid-aware-wp' ),
+					'Electricity Maps',
+					$api_message
 				);
 			}
 
-			$intensity_data = json_decode( $response_body, true );
+			return new WP_Error(
+				'api_error',
+				$full_error_message,
+				array(
+					'status' => $response_code,
+					'body'   => $response_body,
+				)
+			);
+		}
 
-			if ( null === $intensity_data ) {
-				return new WP_Error( 'invalid_response', __( 'Invalid response from Electricity Maps API.', 'grid-aware-wp' ) );
+		$intensity_data = json_decode( $response_body, true );
+
+		if ( null === $intensity_data ) {
+			return new WP_Error( 'invalid_response', __( 'Invalid response from Electricity Maps API.', 'grid-aware-wp' ) );
+		}
+
+		// The API returns data in this format according to the documentation:
+		// {
+		//   "zone": "DE",
+		//   "data": [
+		//     {
+		//       "level": "high",
+		//       "datetime": "2025-06-23T11:00:00.000Z"
+		//     }
+		//   ]
+		// }
+		
+		// Extract the level from the response
+		if ( isset( $intensity_data['data'] ) && is_array( $intensity_data['data'] ) && ! empty( $intensity_data['data'] ) ) {
+			$latest_data = $intensity_data['data'][0];
+			$intensity_level = isset( $latest_data['level'] ) ? $latest_data['level'] : null;
+			
+			if ( $intensity_level ) {
+				// Map Electricity Maps levels to our plugin levels
+				// EM uses: "high", "moderate", "low"
+				// Plugin uses: "high", "medium", "low"
+				$mapped_level = $intensity_level;
+				if ( $intensity_level === 'moderate' ) {
+					$mapped_level = 'medium';
+				}
+				
+				// Create a normalized response structure
+				$normalized_response = array(
+					'zone' => isset( $intensity_data['zone'] ) ? $intensity_data['zone'] : 'unknown',
+					'intensity_level' => $mapped_level,
+					'datetime' => isset( $latest_data['datetime'] ) ? $latest_data['datetime'] : null,
+					'raw_data' => $intensity_data // Keep original data for debugging
+				);
+				
+				// Ensure zone is set for local fallback.
+				if ( $is_local && ! isset( $normalized_response['zone'] ) ) {
+					$normalized_response['zone'] = 'ES';
+				}
+				
+				// Cache the normalized response.
+				set_transient( $cache_key, $normalized_response, self::CACHE_DURATION );
+				
+				return $normalized_response;
 			}
-
-			// Cache the response.
-			set_transient( $cache_key, $intensity_data, self::CACHE_DURATION );
 		}
 
-		if ( is_wp_error( $intensity_data ) ) {
-			return $intensity_data;
-		}
+		return new WP_Error( 'no_level_data', __( 'No carbon intensity level data available in the API response.', 'grid-aware-wp' ) );
+	}
 
-		$carbon_intensity = isset( $intensity_data['carbonIntensity'] ) ? $intensity_data['carbonIntensity'] : null;
-
-		if ( null === $carbon_intensity ) {
-			return new WP_Error( 'no_intensity_data', __( 'No carbon intensity data available in the API response.', 'grid-aware-wp' ) );
-		}
-
-		// Determine and add our custom intensity level.
-		$intensity_data['intensity_level'] = self::get_intensity_level( $carbon_intensity );
-
-		// Ensure zone is set for local fallback.
-		if ( $is_local && ! isset( $intensity_data['zone'] ) ) {
-			$intensity_data['zone'] = 'ES';
-		}
-
-		return $intensity_data;
+	/**
+	 * Get current carbon intensity level for the visitor.
+	 *
+	 * This function now uses the carbon-intensity-level endpoint directly to get
+	 * categorized intensity levels without numerical CO2 values.
+	 *
+	 * @param string $api_key Optional API key override.
+	 * @return array|WP_Error Response with intensity level and data.
+	 */
+	public static function get_current_intensity_level( $api_key = '' ) {
+		// Use the new direct method
+		return self::get_current_intensity_level_direct( $api_key );
 	}
 }

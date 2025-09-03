@@ -3,7 +3,7 @@
  * Plugin Name: Grid Aware WordPress
  * Plugin URI: https://github.com/nahuai/grid-aware-wp
  * Description: A plugin that helps manage and optimize grid-based content in WordPress.
- * Version: 0.9.0
+ * Version: 0.9.1
  * Authors: Nahuai Badiola, Nora Ferreirós
  * Author URI: https://nbadiola.com
  * Plugin URI: https://github.com/nahuai/grid-aware-wp
@@ -21,7 +21,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Define plugin constants
-define( 'GRID_AWARE_WP_VERSION', '0.9.0' );
+define( 'GRID_AWARE_WP_VERSION', '0.9.1' );
 define( 'GRID_AWARE_WP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GRID_AWARE_WP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -120,13 +120,10 @@ function grid_aware_wp_add_intensity_info_bar_and_switcher() {
 	if ( ! is_wp_error( $data ) && is_array( $data ) ) {
 		$zone = isset( $data['zone'] ) ? strtoupper( $data['zone'] ) : '??';
 		$intensity_label = isset( $data['intensity_level'] ) ? strtoupper( $data['intensity_level'] ) : 'UNKNOWN';
-		$intensity_value = isset( $data['carbonIntensity'] ) ? round( $data['carbonIntensity'] ) : 'N/A';
 	} else {
 		$zone = '??';
 		$intensity_label = 'UNKNOWN';
-		$intensity_value = 'N/A';
 	}
-	$intensity_unit = 'gCO<sub>2</sub>eq/kWh';
 
 	// Determine the effective grid intensity for this request
 	if ( isset( $_GET['grid_intensity'] ) && strtolower( $_GET['grid_intensity'] ) !== 'live' ) {
@@ -150,7 +147,6 @@ function grid_aware_wp_add_intensity_info_bar_and_switcher() {
 			</span>
 			<span class="grid-info-country"><?php echo esc_html( $zone ); ?></span>
 			<span class="grid-info-intensity-label"><strong><?php echo esc_html( $intensity_label ); ?> INTENSITY</strong></span>
-			<span class="grid-info-carbon"><?php echo esc_html( $intensity_value ); ?> <?php echo wp_kses_post( $intensity_unit ); ?></span>
 		</div>
 		<div class="grid-info-right">
 			<span class="grid-design-title">GRID-AWARE DESIGN

@@ -72,13 +72,6 @@ class Grid_Aware_WP_REST_API {
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'get_current_intensity' ),
 				'permission_callback' => '__return_true', // Public endpoint
-				'args' => array(
-					'zone' => array(
-						'required' => false,
-						'type'     => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-					),
-				),
 			)
 		);
 
@@ -97,12 +90,6 @@ class Grid_Aware_WP_REST_API {
 						'required' => true,
 						'type'     => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
-					),
-					'zone' => array(
-						'required' => false,
-						'type'     => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
-						'default'  => 'FR',
 					),
 				),
 			)
@@ -170,14 +157,8 @@ class Grid_Aware_WP_REST_API {
 	 * @return WP_REST_Response|WP_Error The response object.
 	 */
 	public function get_current_intensity( $request ) {
-		$zone = $request->get_param( 'zone' );
-
-		// If zone is provided, use it; otherwise get from IP
-		if ( ! empty( $zone ) ) {
-			$intensity_data = Grid_Aware_WP_Electricity_Maps_API::get_carbon_intensity( $zone );
-		} else {
-			$intensity_data = Grid_Aware_WP_Electricity_Maps_API::get_current_intensity_level();
-		}
+		// Always use the intensity level endpoint for consistency
+		$intensity_data = Grid_Aware_WP_Electricity_Maps_API::get_current_intensity_level();
 
 		if ( is_wp_error( $intensity_data ) ) {
 			return new WP_Error(
@@ -198,7 +179,6 @@ class Grid_Aware_WP_REST_API {
 	 */
 	public function test_api_connection( $request ) {
 		$api_key = $request->get_param( 'api_key' );
-		$zone = $request->get_param( 'zone' );
 
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
@@ -208,8 +188,8 @@ class Grid_Aware_WP_REST_API {
 			);
 		}
 
-		// Test the API connection
-		$test_result = Grid_Aware_WP_Electricity_Maps_API::get_carbon_intensity( $zone, $api_key );
+		// Test the API connection using the intensity level endpoint
+		$test_result = Grid_Aware_WP_Electricity_Maps_API::get_current_intensity_level( $api_key );
 
 		if ( is_wp_error( $test_result ) ) {
 			return new WP_Error(

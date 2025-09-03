@@ -64,7 +64,6 @@ async function fetchLiveIntensity() {
 		// Fallback to medium intensity if API fails
 		updatePageWithIntensity(FALLBACK_INTENSITY, {
 			intensity_level: FALLBACK_INTENSITY,
-			carbonIntensity: 300,
 			zone: 'unknown (fallback)',
 			timestamp: new Date().toISOString(),
 			error: error.message

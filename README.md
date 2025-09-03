@@ -1,4 +1,4 @@
-[> [!WARNING]
+[!WARNING]
 > This is an experimental plugin in alpha stage and active development. It is currently not suitable for production use.
 
 # Grid Aware WordPress
@@ -19,6 +19,14 @@ When the grid intensity is medium or high (meaning more fossil-fuel-based energy
 
 You can see the plugin in action in the [example page created on Sustain WP](https://sustainwp.com/grid-aware-wordpress/).
 
+## Changelog
+
+### Version 0.9.1 (Latest)
+- **Simplified API Implementation**: Now exclusively uses the Electricity Maps `/carbon-intensity-level/latest` endpoint for cleaner, more focused functionality
+- **Removed Carbon Intensity Values**: No longer displays raw gCO2eq/kWh values in the frontend, focusing on user-friendly intensity levels (low/medium/high)
+- **Streamlined User Experience**: Simplified top bar displays only essential grid information without overwhelming technical details
+- **Enhanced Code Clarity**: Removed zone-specific functionality and complex carbon intensity calculations for better maintainability
+
 ## Features
 
 The plugin works on two fronts:
@@ -27,13 +35,13 @@ The plugin works on two fronts:
 - **Settings Page**: Define global or per-page behavior, enabling editors to decide which elements are critical and which can be progressively added as the grid becomes cleaner
 - **Block Editor Controls**: Preview links, sidebar options, and block-specific controls that help editors make informed design decisions regarding sustainability
 - **Admin Banner**: Visible warning message alerting site owners that visitors on a fossil-fuel-heavy grid will see a modified experience
-- **Real-time Grid Intensity Detection**: Uses the Electricity Maps API to get live carbon intensity data
+- **Real-time Grid Intensity Detection**: Uses the Electricity Maps `/carbon-intensity-level/` API to get live grid intensity levels
 - **API Connection Testing**: Verify your Electricity Maps API key works correctly
 
 **Frontend Features:**
-- **Top Bar**: Always visible information bar providing users with grid-aware system information and options to explore different views
-- **Automatic Geolocation**: Detects visitor location and fetches corresponding grid data
-- **Dynamic Content Optimization**: Adjusts images, videos, and typography based on grid intensity
+- **Top Bar**: Always visible information bar showing grid intensity level and zone with options to explore different views
+- **Automatic Geolocation**: Detects visitor location and fetches corresponding grid intensity level
+- **Dynamic Content Optimization**: Adjusts images, videos, and typography based on grid intensity level
 - **Live Preview**: Test different intensity levels in the WordPress editor
 
 ## Current Limitations
@@ -86,13 +94,13 @@ You can also configure settings for individual pages:
 
 ### Grid Intensity Levels
 
-The plugin categorizes grid intensity into three levels based on how the current carbon intensity compares to the rolling average of the previous 10 days:
+The plugin uses the Electricity Maps `/carbon-intensity-level/latest` API endpoint to categorize grid intensity into three levels based on relative comparisons to historical data:
 
-- **Low** (ratio < 0.85): 15% below average - cleaner than usual grid conditions
-- **Medium** (0.85 ≤ ratio ≤ 1.15): Between 15% below and 15% above average - typical grid conditions
-- **High** (ratio > 1.15): 15% above average - dirtier than usual grid conditions
+- **Low**: Cleaner than usual grid conditions - more renewable energy in the mix
+- **Medium**: Typical grid conditions - moderate mix of energy sources  
+- **High**: Dirtier than usual grid conditions - more fossil fuel-based energy
 
-These thresholds are based on the [Electricity Maps API](https://portal.electricitymaps.com/developer-hub/api/reference#latest-carbon-intensity-level) and provide a relative measure of grid cleanliness rather than absolute carbon intensity values.
+These intensity levels are determined directly by the [Electricity Maps carbon-intensity-level API](https://portal.electricitymaps.com/developer-hub/api/reference#latest-carbon-intensity-level) and provide a relative measure of grid cleanliness without exposing raw carbon intensity values to users.
 
 ### Content Optimization
 
@@ -119,9 +127,9 @@ The plugin adapts the display of heavy elements based on grid intensity:
 
 When visitors select "Live" mode, the plugin:
 1. Detects their location via IP address
-2. Fetches current carbon intensity from Electricity Maps
+2. Fetches current grid intensity level from Electricity Maps
 3. Automatically applies the appropriate optimization level
-4. Shows a live data indicator with current grid information
+4. Shows a live data indicator with current grid information (intensity level and zone)
 
 The information bar has a standardized appearance, regardless of the website on which the plugin is installed. For consistency, we've kept the "Low," "Medium," and "High" labels in the view selector. However, these can potentially be confusing: Since the buttons change the layout, the user might interpret "Low" as offering a simpler design, when in fact it refers to a low-intensity power grid. 
 Feedback on this is more than welcome.
@@ -153,7 +161,7 @@ Feedback on this is more than welcome.
 
 The plugin provides several REST API endpoints:
 
-- `GET /wp-json/grid-aware-wp/v1/intensity` - Get current carbon intensity
+- `GET /wp-json/grid-aware-wp/v1/intensity` - Get current grid intensity level (low/medium/high)
 - `POST /wp-json/grid-aware-wp/v1/test-api` - Test API connection
 - `GET /wp-json/grid-aware-wp/v1/settings` - Get plugin settings
 - `POST /wp-json/grid-aware-wp/v1/settings` - Update plugin settings
